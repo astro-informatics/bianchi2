@@ -1,0 +1,22 @@
+# BIANCHI2 VII_h simualtion parameter file
+# Jason McEwen                October 2005
+
+omega_matter = 0.30
+omega_lambda = 0.60
+h            = 1
+zE           = 1100
+wH           = 1d-10
+rhand        = T
+
+alpha  = 0e0
+beta   = -90e0
+gamma  = 0e0
+
+apply_beam = F
+fwhm       = 100
+lmax      = 64
+
+nside     = 128
+
+filename_out = sky_bianchi2_h1.fits
+filetype  = map
