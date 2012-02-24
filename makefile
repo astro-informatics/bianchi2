@@ -10,7 +10,7 @@ USEPGPLOT = no
 
 # ======== COMPILER ========
 
-FC      = nagfor
+#FC      = nagfor
 #FC      = gfortran
 FC      = ifort
 #FC      = f95
@@ -19,7 +19,7 @@ FC      = ifort
 ifneq ($(USEPGPLOT),yes)
   OPTPGPLOT     = -DNO_PGPLOT
 endif
-OPT = $(OPTPGPLOT) -DMILLIK -Wc,-fno-common
+OPT = $(OPTPGPLOT) -DMILLIK -Wc,-fno-common -openmp
 ifeq ($(FC),gfortran)
   OPT += -m64
 endif
@@ -43,11 +43,11 @@ endif
 PROGDIR      = ..
 
 HPIXDIR      = $(PROGDIR)/Healpix
-HPIXLIB      = $(HPIXDIR)/lib_nag
+HPIXLIB      = $(HPIXDIR)/lib_ifort
 HPIXLIBNM    = healpix
-HPIXINC      = $(HPIXDIR)/include_nag
+HPIXINC      = $(HPIXDIR)/include_ifort
 
-S2DIR        = $(PROGDIR)/s2_nag
+S2DIR        = $(PROGDIR)/s2_ifort
 S2LIB        = $(S2DIR)/lib
 S2LIBNM      = s2
 S2INC        = $(S2DIR)/include
@@ -65,12 +65,14 @@ BIANCHI2LIB   = $(BIANCHI2DIR)/lib
 BIANCHI2DOC   = $(BIANCHI2DIR)/doc
 BIANCHI2LIBNM = bianchi2
 
-CFITSIOLIB   = $(PROGDIR)/cfitsio_nag/lib
+CFITSIOLIB   = /share/apps/cfitsio/icc/lib
+#CFITSIOLIB   = $(PROGDIR)/cfitsio_nag/lib
 CFITSIOLIBNM = cfitsio
 
 #NAGLIB       = $(BIANCHI2DIR)/nag/lib
 #NAGLIBNM     = nag95
-NAGLIBFULL   = /opt/NAG/flmi622d9l/lib/libnag_nag.a
+NAGLIBFULL   = /share/apps/NAG/fll6i23dcl/lib/libnag_nag.a
+#/opt/NAG/flmi622d9l/lib/libnag_nag.a
 
 PGPLOTLIB    = $(PROGDIR)/pgplot
 PGPLOTLIBNM  = pgplot
