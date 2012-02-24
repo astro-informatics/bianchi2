@@ -12,6 +12,7 @@ USEPGPLOT = no
 
 FC      = nagfor
 #FC      = gfortran
+FC      = ifort
 #FC      = f95
 #FC      = g95
 
@@ -27,6 +28,8 @@ endif
 # ======== PPFLAGS ========
 
 ifeq ($(FC),nagfor)
+  PPFLAGS = -fpp $(OPT)
+else ifeq ($(FC),ifort)
   PPFLAGS = -fpp $(OPT)
 else ifeq ($(FC),g95)
   PPFLAGS = -cpp $(OPT)
