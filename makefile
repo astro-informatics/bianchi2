@@ -10,26 +10,41 @@ USEPGPLOT = no
 
 # ======== COMPILER ========
 
-FC      = gfortran
+FC      = nagfor
+#FC      = gfortran
 #FC      = f95
 #FC      = g95
 
 ifneq ($(USEPGPLOT),yes)
   OPTPGPLOT     = -DNO_PGPLOT
 endif
-OPT = $(OPTPGPLOT) -DMILLIK -m64
+OPT = $(OPTPGPLOT) -DMILLIK -Wc,-fno-common
+ifeq ($(FC),gfortran)
+  OPT += -m64
+endif
+
+
+# ======== PPFLAGS ========
+
+ifeq ($(FC),nagfor)
+  PPFLAGS = -fpp $(OPT)
+else ifeq ($(FC),g95)
+  PPFLAGS = -cpp $(OPT)
+else ifeq ($(FC),gfortran)
+  PPFLAGS = -x f95-cpp-input $(OPT)
+endif
 
 
 # ======== LINKS ========
 
-PROGDIR      = /Users/jdm/Src
+PROGDIR      = ..
 
 HPIXDIR      = $(PROGDIR)/Healpix
-HPIXLIB      = $(HPIXDIR)/lib
+HPIXLIB      = $(HPIXDIR)/lib_nag
 HPIXLIBNM    = healpix
-HPIXINC      = $(HPIXDIR)/include
+HPIXINC      = $(HPIXDIR)/include_nag
 
-S2DIR        = $(PROGDIR)/s2
+S2DIR        = $(PROGDIR)/s2_nag
 S2LIB        = $(S2DIR)/lib
 S2LIBNM      = s2
 S2INC        = $(S2DIR)/include
@@ -47,11 +62,12 @@ BIANCHI2LIB   = $(BIANCHI2DIR)/lib
 BIANCHI2DOC   = $(BIANCHI2DIR)/doc
 BIANCHI2LIBNM = bianchi2
 
-CFITSIOLIB   = $(PROGDIR)/cfitsio/lib
+CFITSIOLIB   = $(PROGDIR)/cfitsio_nag/lib
 CFITSIOLIBNM = cfitsio
 
-NAGLIB       = $(BIANCHI2DIR)/nag/lib
-NAGLIBNM     = nag95
+#NAGLIB       = $(BIANCHI2DIR)/nag/lib
+#NAGLIBNM     = nag95
+NAGLIBFULL   = /opt/NAG/flmi622d9l/lib/libnag_nag.a
 
 PGPLOTLIB    = $(PROGDIR)/pgplot
 PGPLOTLIBNM  = pgplot
@@ -74,20 +90,10 @@ endif
 LDFLAGS =  -L$(BIANCHI2LIB) -l$(BIANCHI2LIBNM) \
            -L$(S2LIB) -l$(S2LIBNM) \
            -L$(HPIXLIB) -l$(HPIXLIBNM) \
-           -L$(NAGLIB) -l$(NAGLIBNM) \
+           $(NAGLIBFULL) \
            -L$(CFITSIOLIB) -l$(CFITSIOLIBNM) \
            $(LDFLAGSPGPLOT)
-
-
-# ======== PPFLAGS ========
-
-ifeq ($(FC),f95)
-  PPFLAGS = -fpp $(OPT)
-else ifeq ($(FC),g95)
-  PPFLAGS = -cpp $(OPT)
-else ifeq ($(FC),gfortran)
-  PPFLAGS = -x f95-cpp-input $(OPT)
-endif
+#           -L$(NAGLIB) -l$(NAGLIBNM) \
 
 
 # ======== OBJECT FILES TO MAKE ========
