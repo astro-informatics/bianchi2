@@ -11,17 +11,34 @@ USEPGPLOT = no
 # ======== COMPILER ========
 
 #FC      = nagfor
-#FC      = gfortran
 FC      = ifort
+
+#FC      = gfortran
 #FC      = f95
 #FC      = g95
 
 ifneq ($(USEPGPLOT),yes)
   OPTPGPLOT     = -DNO_PGPLOT
 endif
-OPT = $(OPTPGPLOT) -DMILLIK -Wc,-fno-common -openmp
+OPT = $(OPTPGPLOT) -DMILLIK 
+
+ifeq ($(FC),nagfor)
+  OPT += -Wc,-fno-common 
+endif
+ifeq ($(FC),ifort)
+  OPT += -fno-common
+endif
 ifeq ($(FC),gfortran)
   OPT += -m64
+endif
+
+# NAG ifort Mac OS X libraries typically have 64 bit integers 
+# (disable this otherwise).
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+  ifeq ($(FC), ifort)
+    OPT += -DNAGI8
+  endif 
 endif
 
 
@@ -34,7 +51,7 @@ else ifeq ($(FC),ifort)
 else ifeq ($(FC),g95)
   PPFLAGS = -cpp $(OPT)
 else ifeq ($(FC),gfortran)
-  PPFLAGS = -x f95-cpp-input $(OPT)
+  PPFLAGS = -cpp $(OPT)
 endif
 
 
@@ -43,11 +60,29 @@ endif
 PROGDIR      = ..
 
 HPIXDIR      = $(PROGDIR)/Healpix
-HPIXLIB      = $(HPIXDIR)/lib_ifort
+ifeq ($(FC),ifort)
+  HPIXLIB      = $(HPIXDIR)/lib_ifort
+  HPIXINC      = $(HPIXDIR)/include_ifort
+else
+  ifeq ($(FC),nagfor)
+    HPIXLIB      = $(HPIXDIR)/lib_nag
+    HPIXINC      = $(HPIXDIR)/include_nag
+  else
+    HPIXLIB      = $(HPIXDIR)/lib
+    HPIXINC      = $(HPIXDIR)/include
+  endif
+endif
 HPIXLIBNM    = healpix
-HPIXINC      = $(HPIXDIR)/include_ifort
 
-S2DIR        = $(PROGDIR)/s2_ifort
+ifeq ($(FC),ifort)
+  S2DIR        = $(PROGDIR)/s2_ifort
+else
+  ifeq ($(FC),nagfor)
+    S2DIR        = $(PROGDIR)/s2_nag
+  else
+    S2DIR        = $(PROGDIR)/s2
+  endif
+endif
 S2LIB        = $(S2DIR)/lib
 S2LIBNM      = s2
 S2INC        = $(S2DIR)/include
@@ -65,14 +100,35 @@ BIANCHI2LIB   = $(BIANCHI2DIR)/lib
 BIANCHI2DOC   = $(BIANCHI2DIR)/doc
 BIANCHI2LIBNM = bianchi2
 
-CFITSIOLIB   = /share/apps/cfitsio/icc/lib
-#CFITSIOLIB   = $(PROGDIR)/cfitsio_nag/lib
+ifeq ($(FC),ifort)
+  ifeq ($(UNAME), Darwin)	
+    # Mac Air
+    CFITSIOLIB   = $(PROGDIR)/cfitsio_ifort/lib    
+  else
+    # Hypatia
+    CFITSIOLIB   = /share/apps/cfitsio/icc/lib
+  endif
+endif
+ifeq ($(FC),nagfor)
+  # Mac Air
+    CFITSIOLIB   = $(PROGDIR)/cfitsio_nag/lib
+endif
 CFITSIOLIBNM = cfitsio
 
-#NAGLIB       = $(BIANCHI2DIR)/nag/lib
-#NAGLIBNM     = nag95
-NAGLIBFULL   = /share/apps/NAG/fll6i23dcl/lib/libnag_nag.a
-#/opt/NAG/flmi622d9l/lib/libnag_nag.a
+ifeq ($(FC),ifort)
+  ifeq ($(UNAME), Darwin)	
+    # Mac Air
+    NAGLIBFULL   = /opt/NAG/flmi623dcl/lib/libnag_nag.a \
+                   -framework IOKit -framework CoreFoundation
+  else
+    # Hypatia
+    NAGLIBFULL   = /share/apps/NAG/fll6i23dcl/lib/libnag_nag.a
+  endif
+endif
+ifeq ($(FC),nagfor)
+  # Mac Air
+  NAGLIBFULL   = /opt/NAG/flmi622d9l/lib/libnag_nag.a
+endif
 
 PGPLOTLIB    = $(PROGDIR)/pgplot
 PGPLOTLIBNM  = pgplot

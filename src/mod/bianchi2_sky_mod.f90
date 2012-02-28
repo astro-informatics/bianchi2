@@ -288,6 +288,7 @@ module bianchi2_sky_mod
                 exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0)/(-1.D0-sin(b2gd_theta_0)+ &
                 exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0)-exp(2.D0*b2gd_alpha*tstop_use))
             other_bit = U10_req*t0
+
             map(ipixring(ipix)) = map(ipixring(ipix)) - other_bit/(1+b2gd_ze)*2d0 
 
          end do
@@ -697,7 +698,11 @@ module bianchi2_sky_mod
       real(s2_dp) :: tstart,tol
       real(s2_dp) :: tmin,tmax,t,tend    
       real(s2_dp) :: R,RH
+#ifdef NAGI8
+      integer(kind=8) :: neqn,irelab,ifail
+#else
       integer :: neqn,irelab,ifail
+#endif
 
       character(len=1) :: relabs
       external d02cjw
@@ -869,15 +874,21 @@ module bianchi2_sky_mod
 
       real(s2_dp), intent(out) :: tau_needed
 
-      ! Scalar arguments
       real(s2_dp) :: aa, ABSERR, bb, EPSABS, EPSREL, RESULT_VAL
+
+#ifdef NAGI8
+      integer(kind=8) :: IFAIL
+      integer(kind=8), parameter :: LIWORK = 10000
+      integer(kind=8), parameter :: LWORK = 10000
+      integer(kind=8) :: IWORK(LIWORK)
+#else
       integer :: IFAIL
       integer, parameter :: LIWORK = 10000
       integer, parameter :: LWORK = 10000
-
-      ! Array arguments
-      real(s2_dp) :: WORK(LWORK)
       integer :: IWORK(LIWORK)
+#endif
+
+      real(s2_dp) :: WORK(LWORK)
 
       ifail=0
       epsabs=1d-6
@@ -885,7 +896,6 @@ module bianchi2_sky_mod
 
       aa=1d0/sqrt(1+b2gd_ze)
       bb=1d0
-
       call d01ajf(F1r,aa,bb,EPSABS,EPSREL,RESULT_VAL,ABSERR,WORK,LWORK,&
         IWORK,LIWORK,IFAIL)
 	
