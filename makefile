@@ -26,7 +26,7 @@ ifeq ($(FC),nagfor)
   OPT += -Wc,-fno-common 
 endif
 ifeq ($(FC),ifort)
-  OPT += -fno-common
+  OPT += -fno-common -openmp
 endif
 ifeq ($(FC),gfortran)
   OPT += -m64
