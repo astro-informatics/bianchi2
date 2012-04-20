@@ -322,6 +322,7 @@ module bianchi2_sky_mod
     end function bianchi2_sky_init
 
 
+
     !--------------------------------------------------------------------------
     ! bianchi2_sky_free
     !
@@ -641,25 +642,109 @@ module bianchi2_sky_mod
     !!  - alpha: Alpha Euler angle of the rotation.
     !!  - beta: Beta Euler angle of the rotation.
     !!  - gamma: Gamma Euler angle of the rotation.
+    !!  - lmax: Maximum harmonic l to consider.
+    !!  - nside: Healpix nside to compute map at.
+    !!  - rotation_alm : put .false. in bianchi2_sim.f90 if
+    !     one wants to perform the rotation pixel by pixel
     !
     !! @author J. D. McEwen
     !! @version 0.1 October 2005
     !
     ! Revisions:
     !   October 2005 - Written by Jason McEwen
+    !   April 2012 - Modifications by Thibaut Josset
+    !                Added option to perform rotation in harmonic space.
     !--------------------------------------------------------------------------
 
-    subroutine bianchi2_sky_rotate(b, alpha, beta, gamma)
+    subroutine bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,&
+ rotation_alm)
+
+      use s2_dl_mod, only: s2_dl_beta_operator
 
       type(bianchi2_sky), intent(inout) :: b
-      real(s2_sp) :: alpha, beta, gamma
+      real(s2_sp), intent(in), optional :: alpha, beta, gamma
+
+      logical, intent(in) :: rotation_alm
+      integer, intent(in) :: lmax, nside
+      integer :: l, m
+      integer :: fail=10
+      complex(s2_spc), allocatable :: alm(:,:)
+      complex(s2_spc), allocatable :: alm_rotate(:,:)
+      real(s2_dp), pointer :: dl(:,:) => null()
+      complex(s2_dpc) :: Dm_p1, Dm_m1
+      real(s2_sp), parameter :: ZERO_TOL = 1d-4
+      complex(s2_dpc) :: icmpx
+      !set icmpx=sqrt(-1)
+      icmpx = cmplx(0d0,1d0)
 
       ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_rotate')
-      end if 
+      end if
+      
 
-      call s2_sky_rotate(b%sky, alpha, beta, gamma)
+      ! Rotate if Euler angles present and at least one angle non-zero
+      if(present(alpha) .and. present(beta) .and. present(gamma) &
+           .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
+         
+         !Choose between rotation pixel by pixel or rotation of the alm
+         if (rotation_alm == .false.) then
+
+            write(*,*) 'Rotation pixel by pixel with s2_sky_rotate'
+            call s2_sky_rotate(b%sky, alpha, beta, gamma)
+
+         else
+
+            write(*,*) 'Rotation of the alm'
+            allocate(dl(-lmax:lmax,-lmax:lmax),stat=fail)
+            allocate(alm(0:lmax,0:lmax), stat=fail)
+            allocate(alm_rotate(0:lmax,0:lmax), stat=fail)
+            if(fail/=0) then
+               call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
+                    'bianchi_sky_rotate')
+            endif
+            alm_rotate = 0e0
+
+            !get alm
+            call bianchi2_sky_compute_alm(b,lmax,lmax)
+            call bianchi2_sky_get_alm(b, alm)
+
+            ! perform rotation in harmonic space,&
+            ! noting Bianchi alms only non zero for m=+-1)
+            do l = 1,lmax
+
+               call s2_dl_beta_operator(dl, real(beta,s2_dp), l)
+            
+               do m = 0,l
+
+
+                  !Calculation of  Dl,m,+-1
+                  Dm_p1 = exp(-icmpx*m*alpha) * dl(m, 1) * exp(-icmpx*gamma)
+                  Dm_m1 = exp(-icmpx*m*alpha) * dl(m,-1) * exp( icmpx*gamma)
+
+                  !Rotation of the alm
+                  alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
+             
+               end do
+
+           end do
+           
+           !Make free b%sky
+           call s2_sky_free(b%sky)
+
+           ! Compute sky object with rotated alms
+           b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)
+           
+           call bianchi2_sky_compute_map(b,nside)
+
+           ! Dellocate memory used for rotating alms
+           deallocate(alm_rotate)
+           deallocate(alm)
+           deallocate(dl)
+
+         end if
+
+       endif
 
     end subroutine bianchi2_sky_rotate
 

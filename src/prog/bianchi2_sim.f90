@@ -65,6 +65,9 @@ program bianchi2_sim
   logical :: apply_beam = .false.
   real(s2_sp) :: fwhm = FWHM_DEFAULT
 
+  !Choice between rotation pixel by pixel or rotation of the alm
+  logical :: rotation_alm =.true.
+
   ! Set default parameter values.
   filename_out = 'sky.fits'
   omega_matter = OMEGA_MATTER_DEFAULT
@@ -320,6 +323,7 @@ program bianchi2_sim
   ! Simulated bianchi2 sky.
   write(*,'(a)')
 
+
   ! Initialise bianchi2 object.
   write(*,'(a)') 'Computing BIANCHI2 simulation in real space...'
   b = bianchi2_sky_init(omega_matter, omega_lambda, h, zE, wH, rhand, &
@@ -328,9 +332,10 @@ program bianchi2_sim
   write(*,'(a)') 'Simulation complete'
   write(*,'(a)')
 
-  ! Perform rotation.
-  call bianchi2_sky_rotate(b, alpha, beta, gamma)
-  
+  ! Perform rotation
+  call bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,rotation_alm)
+
+
   ! Apply beam if required.
   if(apply_beam) then
       
