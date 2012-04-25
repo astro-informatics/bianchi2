@@ -13,7 +13,7 @@
 !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
 !!          Anthony Lasenby</a>
-!! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
+!! \authors Thibaut Josset
 !==============================================================================
 
 
@@ -121,7 +121,6 @@ module bianchi2_sky_mod
     !> Initialise bianchi2 object by performing a bianchi2 simulation that
     !! incorporates a cosmological constant.
     !!
-    !! Variables:
     !!  \param[in] omega_matter_in Input omega_matter parameter (see bianchi2 data
     !!    type for explanation).
     !!  \param[in] omega_lambda_in Input omega_lambda parameter (see bianchi2 data
@@ -339,7 +338,6 @@ module bianchi2_sky_mod
     !> Initialise bianchi2 object by performing a bianchi2 simulation that
     !! incorporates a cosmological constant.
     !!
-    !! Variables:
     !!  \param[in] omega_matter_in Input omega_matter parameter (see bianchi2 data
     !!    type for explanation).
     !!  \param[in] omega_lambda_in: Input omega_lambda parameter (see bianchi2 data
@@ -356,7 +354,7 @@ module bianchi2_sky_mod
     !!  \param[in] gamma: Gamma Euler angle of the rotation.
     !!  \retval b Initialised bianchi2 object with simulated map calculated.
     !!    
-    !!  \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
+    !!  \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
@@ -607,7 +605,6 @@ module bianchi2_sky_mod
     !
     !> Free all memory associated with a bianchi2 object.
     !!
-    !! Variables:
     !!  \param[inout] b Bianchi2 object to free.
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
@@ -667,7 +664,6 @@ module bianchi2_sky_mod
     !> Compute the map of the bianchi2 sky, assuming the alms are already
     !! defined.
     !!
-    !! Variables:
     !!  \param[inout] b Bianchi2 object containing alms to compute map of.
     !!  \param[in] nside Healpix nside to compute map at.
     !!
@@ -696,7 +692,6 @@ module bianchi2_sky_mod
     !> Compute the alm of the bianchi2 sky, assuming the map is already
     !! defined.
     !!
-    !! Variables:
     !!  \param[inout] b Bianchi2 object containing sky to compute alms of.
     !!  \param[in] lmax Maximum harmonic l to consider when computing alms.
     !!  \pram[in] mmax Maximum harmonic m to consider when computing alms.
@@ -725,12 +720,10 @@ module bianchi2_sky_mod
     !
     !> Get sky variable from the passed bianchi2 object.
     !!
-    !! Notes:
-    !!   - Initialises a new sky as a copy of the bianchi2 sky.
-    !!   - The returned sky is subsequently independed of the sky stored
+    !!   \note Initialises a new sky as a copy of the bianchi2 sky.
+    !!   \note The returned sky is subsequently independed of the sky stored
     !!     herein and should be freed by the calling routine at some point.
     !!
-    !! Variables:
     !!   \param[in] b Bianchi2 object containing sky to get.
     !!   \retval sky Object sky variable returned.
     !!
@@ -758,10 +751,8 @@ module bianchi2_sky_mod
     !> Get alms contained in a bianchi2 sky object.  Alms must already be
     !! computed.
     !!
-    !! Notes:
-    !!   - Error occurs if alms are not already computed.
+    !!   \note Error occurs if alms are not already computed.
     !!
-    !! Variables:
     !!   \param[in] b Bianchi2 object containing sky that in turn contained the alms
     !!     to get.
     !!   \retval alm Alms of simulated bianchi map extracted.
@@ -790,10 +781,8 @@ module bianchi2_sky_mod
     !> Apply Gaussian beam with specified FWHM.  (FWHM must be passed in
     !! arcmin.)
     !!
-    !! Notes:
-    !!   - Error occurs if alms are not already computed.
-    !!
-    !! Variables:
+    !!   \note Error occurs if alms are not already computed.
+    !!   
     !!   \param[inout] b Bianchi2 object containing sky that is to be comvolved with
     !!     the beam.
     !!   \param[in] fwhm Gaussian beam FWHM to use (specified in arcmin).
@@ -833,7 +822,6 @@ module bianchi2_sky_mod
     !
     !> Write the bianchi2 simulated sky to a file. 
     !!
-    !! Variables:
     !!  \param[inout] b Bianchi2 object to save sky of.
     !!  \param[in] filename Name of output file.
     !!  \param[in] file_type Type of output file, either fits map or sky file 
@@ -877,7 +865,6 @@ module bianchi2_sky_mod
     !
     !> Rotate the simulated sky of the bianchi2 object.  
     !!
-    !! Variables:
     !!  \param[inout] b Bianchi2 object containing sky to be rotated.
     !!  \param[in] alpha Alpha Euler angle of the rotation.
     !!  \param[in] beta Beta Euler angle of the rotation.
@@ -887,7 +874,7 @@ module bianchi2_sky_mod
     !!  \param[in] rotation_alm Logical to specify the space used for the rotation.
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
-    !! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
+    !! \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
     subroutine bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,&
@@ -995,7 +982,6 @@ module bianchi2_sky_mod
     !
     !> This returns the values found at the end of the integral
     !!
-    !! Variables:
     !!  \param[in] tstop_use
     !!  \retval R_final
     !!  \retval RH_final
@@ -1095,7 +1081,6 @@ module bianchi2_sky_mod
     ! fcn
     !>
     !!
-    !! Variables:
     !!  \param[in] t
     !!  \param[in] vars
     !!  \retval ff
@@ -1153,7 +1138,6 @@ module bianchi2_sky_mod
     !
     !>
     !!
-    !! Variables:
     !!  \param[inout] b
     !!  \param[in] vals
     !! 
@@ -1193,7 +1177,6 @@ module bianchi2_sky_mod
     !
     !>
     !!
-    !! Variable:
     !!  \retval tau_needed
     !!
     !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
@@ -1243,7 +1226,6 @@ module bianchi2_sky_mod
     ! F1r
     !
     !>
-    !! Variable:
     !!  \param[in] a
     !!
     !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
@@ -1284,13 +1266,12 @@ module bianchi2_sky_mod
     !
     !> Compute IA and IB integrals required in Bianchi2 simulation.
     !!
-    !! Variables:
     !!   \param[in] l Harmonic l to compute IA_l or IB_l for.
     !!   \param[in] Nuse Number of terms in use in the integration.
     !!   \param[in] X_grid Contains the values A_grid(itheta) or B_grid(itheta).
     !!   \retval IX Value of the integral.
     !!
-    !! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
+    !! \authors Thibaut Josset
     !--------------------------------------------------------------------------  
 
     function bianchi2_sky_comp_IX(l, Nuse, X_grid) result(IX)
@@ -1331,11 +1312,9 @@ module bianchi2_sky_mod
     !> Computes the associated Legendre function for l and m.
     !!  Adapted from numerical recipes 
     !!
-    !! Notes:
-    !!   - Numerical recipies comment:
+    !!   \note Numerical recipies comment:
     !!     Computes the associated Legendre polynomial P_m^l(x).
     !!
-    !! Variables:
     !!   \param[in] l Legendre function l parameter.
     !!   \param[in] m Legendre function m parameter.
     !!   \param[in] x Point to evaluate specified Legendre funtion at.

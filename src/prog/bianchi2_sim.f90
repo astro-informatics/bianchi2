@@ -7,7 +7,7 @@
 !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
 !!          Anthony Lasenby</a>
-!! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
+!! \authors Thibaut Josset
 !------------------------------------------------------------------------------
 
 program bianchi2_sim

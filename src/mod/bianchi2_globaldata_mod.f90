@@ -1,7 +1,7 @@
 !------------------------------------------------------------------------------
 ! bianchi2_globaldata_mod -- BIANCHI2 library global data class
 !
-!! >Stores global data required in bianchi2 data routines.  Ideally one would 
+!> Stores global data required in bianchi2 data routines.  Ideally one would 
 !! avoid global data passed in this way, however it is required to get data
 !! into the routines taken by the numerical recipes functions used in
 !! computing bianchi2 templates.

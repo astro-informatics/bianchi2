@@ -85,7 +85,6 @@ module bianchi2_error_mod
     !> Display error message corresponding to error_code and halt program 
     !! execution if required.
     !!
-    !! Variables:
     !!   \param[in] error_code Integer error code.
     !!   \apram[in] procedure Procedure name where bianchi2_error called from.  Displayed 
     !!     when error message printed to screen.
