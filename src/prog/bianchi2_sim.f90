@@ -13,6 +13,10 @@
 !                  induced temperature fluctuations.  JDM has merely compiled
 !                  this into a fortran 90 package that interfaces with 
 !                  Healpix using the s2 library.
+!
+!   April   2012 - Written by Thibaut Josset
+!                  Some parameters added to choose computing
+!                  in real space or in harmonic space.
 !------------------------------------------------------------------------------
 
 program bianchi2_sim
@@ -49,6 +53,8 @@ program bianchi2_sim
   real(s2_dp), parameter :: WH_DEFAULT = 1d-10
   real(s2_sp), parameter :: FWHM_DEFAULT = 330d0
   logical, parameter :: RHAND_DEFAULT = .true.
+  logical, parameter :: HARMONIC_SPACE_DEFAULT = .true.
+  integer, parameter :: NUSE_DEFAULT = 100
   character(len=*), parameter :: FILE_TYPE_MAP_STR = 'map'
   character(len=*), parameter :: FILE_TYPE_SKY_STR = 'sky'
 
@@ -65,8 +71,12 @@ program bianchi2_sim
   logical :: apply_beam = .false.
   real(s2_sp) :: fwhm = FWHM_DEFAULT
 
-  !Choice between rotation pixel by pixel or rotation of the alm
-  logical :: rotation_alm =.true.
+  logical :: harmonic_space
+  integer :: Nuse
+
+  logical :: rotation_alm = .false. ! Choose true only for 
+                                    ! simulation in real space but 
+                                    ! rotation in harmonic space.
 
   ! Set default parameter values.
   filename_out = 'sky.fits'
@@ -80,6 +90,8 @@ program bianchi2_sim
   lmax = 64
   rhand = .true.
 
+  harmonic_space = HARMONIC_SPACE_DEFAULT
+  Nuse = NUSE_DEFAULT
 
   write(*,'(a)') '***********************************************'
   write(*,'(a)') 'BIANCHI2 VII_h rotating universe CMB simulation'
@@ -285,7 +297,20 @@ program bianchi2_sim
           comment_add='nside invalid')
   endif
   
-  
+  ! Get harmonic_space.
+  description = concatnl('', &
+       'Enter harmonic_space status (logical): ')
+  harmonic_space = parse_lgt(handle, 'harmonic_space', &
+       default=HARMONIC_SPACE_DEFAULT, descr=description)
+
+
+  ! Get Nuse.
+  description = concatnl("", &
+       "Enter the number of terms (Nuse) used for the integrations: ")
+  Nuse = parse_int(handle, 'Nuse', &
+       default=NUSE_DEFAULT, descr=description)
+ 
+
   ! Get filename_out.
   description = concatnl('', &
        'Enter filename_out: ')
@@ -325,16 +350,27 @@ program bianchi2_sim
 
 
   ! Initialise bianchi2 object.
-  write(*,'(a)') 'Computing BIANCHI2 simulation in real space...'
-  b = bianchi2_sky_init(omega_matter, omega_lambda, h, zE, wH, rhand, &
-    nside)
+  if (harmonic_space == .true.) then
+     
+     write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space...'
+     b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
+          nside, lmax, Nuse, alpha, beta, gamma)
+     write(*,'(a)') 'Simulation complete'
+     write(*,'(a)')
+  
+  else
 
-  write(*,'(a)') 'Simulation complete'
-  write(*,'(a)')
+     write(*,'(a)') 'Computing BIANCHI2 simulation in real space...'
+     b = bianchi2_sky_init(omega_matter, omega_lambda, h, zE, wH, rhand, &
+          nside)
 
-  ! Perform rotation
-  call bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,rotation_alm)
+     write(*,'(a)') 'Simulation complete'
+     write(*,'(a)')
+  
+     ! Perform rotation
+     call bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,rotation_alm)
 
+  end if
 
   ! Apply beam if required.
   if(apply_beam) then

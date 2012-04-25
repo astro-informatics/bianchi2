@@ -18,5 +18,8 @@ lmax      = 64
 
 nside     = 128
 
+harmonic_space = F
+Nuse = 100
+
 filename_out = sky_bianchi2_h1.fits
 filetype  = map

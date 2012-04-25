@@ -14,6 +14,10 @@
 !                  induced temperature fluctuations.  JDM has merely compiled
 !                  this into a fortran 90 package that interfaces with 
 !                  Healpix using the s2 library.
+!
+!   April   2012 - Written by Thibaut Josset
+!                  Function bianchi2_sky_init_alm added :
+!                  simulation and rotation performed in harmonic space.
 !------------------------------------------------------------------------------
 
 module bianchi2_sky_mod
@@ -34,6 +38,7 @@ module bianchi2_sky_mod
 
   public :: &
     bianchi2_sky_init, &
+    bianchi2_sky_init_alm, &
     bianchi2_sky_free, &
     bianchi2_sky_write, &
     bianchi2_sky_rotate, &
@@ -43,6 +48,7 @@ module bianchi2_sky_mod
     bianchi2_sky_get_sky, &
     bianchi2_sky_get_alm, &
     bianchi2_sky_apply_beam
+
 
 
   !---------------------------------------
@@ -289,8 +295,8 @@ module bianchi2_sky_mod
                 exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0)-exp(2.D0*b2gd_alpha*tstop_use))
             other_bit = U10_req*t0
 
-            map(ipixring(ipix)) = map(ipixring(ipix)) - other_bit/(1+b2gd_ze)*2d0 
-
+            map(ipixring(ipix)) = map(ipixring(ipix)) - other_bit/(1+b2gd_ze)*2d0           
+            
          end do
 
       end do
@@ -320,6 +326,279 @@ module bianchi2_sky_mod
       deallocate(ipixring)
 
     end function bianchi2_sky_init
+
+
+
+    !--------------------------------------------------------------------------
+    ! bianchi2_sky_init_alm
+    !
+    !! Initialise bianchi2 object by performing a bianchi2 simulation that
+    !! incorporates a cosmological constant.
+    !!
+    !! Variables:
+    !!  - omega_matter_in: Input omega_matter parameter (see bianchi2 data
+    !!    type for explanation).
+    !!  - omega_lambda_in: Input omega_lambda parameter (see bianchi2 data
+    !!    type for explanation).
+    !!  - h: Input h parameter (see bianchi2 data type for explanation).
+    !!  - zE_in: Input zE parameter (see bianchi2 data type for explanation).
+    !!  - wH: Input wH parameter (see bianchi2 data type for explanation).
+    !!  - rhand: Logical to specify handedness of map.
+    !!  - nside: Nside of Healpix map to generate.
+    !!  - lmax: Maximum harmonic l to consider.
+    !!  - Nuse : Number of terms in use in the integrations IA and IB.
+    !!  - alpha: Alpha Euler angle of the rotation.
+    !!  - beta: Beta Euler angle of the rotation.
+    !!  - gamma: Gamma Euler angle of the rotation.
+    !!  
+    !
+    !! @author T. Josset
+    !! @version 0.1 April 2012
+    !--------------------------------------------------------------------------
+
+    function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
+         nside, lmax, Nuse, alpha, beta, gamma) result(b)
+
+      use bianchi2_globaldata_mod
+      use s2_dl_mod, only : s2_dl_beta_operator
+
+      real(s2_dp), intent(in) :: omega_matter_in, omega_lambda_in, h, zE_in, wH
+      logical, intent(in) :: rhand
+      integer, intent(in) :: nside, lmax, Nuse
+      type(bianchi2_sky) :: b
+  
+      real(s2_dp) :: tstop_use
+      real(s2_dp) :: tau_needed
+      real(s2_dp) :: fact, U10_req
+      real(s2_dp) :: R_final, RH_final, cos_bit_final, sin_bit_final
+      real(s2_dp) :: Lambda, final_dens
+
+      integer :: npix, ipix, fail
+
+      ! Parameters for computing alm
+      complex(s2_spc), allocatable :: alm(:,:)
+      real(s2_dp) :: handedness_sign = +1d0, lsign = 1d0
+      integer :: l, itheta
+      real(s2_dp), allocatable :: A_grid(:), B_grid(:)  
+      real(s2_dp) :: theta_inc
+      real(s2_dp) :: C_sin, C_cos
+      real(s2_dp) :: IA, IB
+      
+      ! Parameters for the rotation
+      real(s2_sp), intent(in), optional :: alpha, beta, gamma
+      real(s2_sp), parameter :: ZERO_TOL = 1d-4
+      real(s2_dp), pointer :: dl(:,:) => null()
+      integer :: m
+      complex(s2_spc), allocatable :: alm_rotate(:,:)
+      complex(s2_dpc) :: Dm_p1, Dm_m1
+      complex(s2_dpc) :: icmpx
+
+      ! Set icmpx=sqrt(-1)
+      icmpx = cmplx(0d0,1d0)
+
+      ! Check object not already initialised.
+      if(b%init) then
+        call bianchi2_error(BIANCHI2_ERROR_INIT, 'bianchi2_sky_init')
+        return
+      end if
+
+      ! Initialise parameters passed as arguments.
+      b%omega_matter = omega_matter_in
+      b%omega_lambda = omega_lambda_in
+      b%h = h
+      b%zE = zE_in
+      b%wH = wH
+      b%rhand = rhand
+
+      ! Initialise healpix alm settings.
+      allocate(alm(0:lmax,0:1), stat=fail)
+      alm = cmplx(0d0, 0d0)
+      if(fail /= 0) then
+        call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
+          'bianchi2_sky_init_alm')
+      end if
+
+
+      ! Set handedness sign.
+      if(b%rhand) then
+         handedness_sign = 1d0
+      else
+         handedness_sign = -1d0
+      end if
+
+      ! Set global data.
+      b2gd_Bianchi_h = b%h
+      b2gd_Omega_matter = b%omega_matter
+      b2gd_Omega_Lambda = b%omega_lambda
+      b2gd_ze = b%zE
+      b2gd_alpha = sqrt(b%h)
+      b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
+
+      ! Initialise other variables.
+      b2gd_alpha = sqrt(b%h)
+      b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
+      call get_tau(tau_needed)
+      tstop_use=-tau_needed    
+
+
+
+      ! Calculate A(theta) and B(theta) terms
+      allocate(A_grid(0:Nuse-1), stat=fail)
+      allocate(B_grid(0:Nuse-1), stat=fail)
+
+      if(fail /= 0) then
+         call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
+            'bianchi2_sky_init_alm')
+      end if
+
+      A_grid = 0d0
+      B_grid = 0d0
+      b2gd_theta_0 = -pi/2d0
+      theta_inc = (pi - 0d0) / real(Nuse, s2_dp)
+
+
+      do itheta = 0, Nuse-1
+
+         call get_results(tstop_use,R_final,RH_final,cos_bit_final,sin_bit_final)
+         fact = sqrt(9.D0*b2gd_alpha**2+1.D0)*sqrt(1.D0+b2gd_alpha**2)* &
+                sqrt(1.D0-b%omega_matter-b%omega_lambda)**3.D0/b2gd_alpha**3 &
+                /b%omega_matter/6.D0
+         U10_req = b%wH/fact
+         Lambda = 3*b2gd_RH_start**2*b%omega_lambda
+         final_dens = (3d0*RH_final**2-Lambda*R_final**2-3d0*b2gd_alpha**2)/(R_final**2)
+
+        C_sin=-U10_req/(1+b2gd_ze)*2d0*( &
+                1/R_final*(sin_bit_final*cos(3d0/4d0*pi)-cos_bit_final*sin(3d0/4d0*pi)) &
+                - 3.D0/final_dens/R_final**5 &
+                  * exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
+                  / (-1.D0-sin(b2gd_theta_0) &
+                     + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
+                     - exp(2.D0*b2gd_alpha*tstop_use)) &
+                  * b2gd_alpha &
+                  * sin((b2gd_alpha*tstop_use- &
+                          dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                              + exp(-2.D0*b2gd_alpha*tstop_use) &
+                              - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                         )/b2gd_alpha+3d0/4d0*pi) &
+               + 1.D0/final_dens/R_final**5 &
+                 *  exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
+                 / (-1.D0-sin(b2gd_theta_0) &
+                    + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
+                    -exp(2.D0*b2gd_alpha*tstop_use)) &
+                 * cos((-b2gd_alpha*tstop_use- &
+                        dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                            + exp(-2.D0*b2gd_alpha*tstop_use) &
+                            - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                       )/b2gd_alpha+3d0/4d0*pi) &
+               )
+
+        C_cos=-U10_req/(1+b2gd_ze)*2d0*( &
+                1/R_final*(sin_bit_final*sin(3d0/4d0*pi)+cos_bit_final*cos(3d0/4d0*pi)) &
+                + 3.D0/final_dens/R_final**5 &
+                  * exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
+                  / (-1.D0-sin(b2gd_theta_0) &
+                     + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
+                     - exp(2.D0*b2gd_alpha*tstop_use)) &
+                  * b2gd_alpha &
+                  * cos((b2gd_alpha*tstop_use- &
+                          dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                              + exp(-2.D0*b2gd_alpha*tstop_use) &
+                              - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                         )/b2gd_alpha+3d0/4d0*pi) &
+               + 1.D0/final_dens/R_final**5 &
+                 *  exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
+                 / (-1.D0-sin(b2gd_theta_0) &
+                    + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
+                    -exp(2.D0*b2gd_alpha*tstop_use)) &
+                 * sin((-b2gd_alpha*tstop_use- &
+                         dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                            + exp(-2.D0*b2gd_alpha*tstop_use) &
+                            - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                       )/b2gd_alpha+3d0/4d0*pi) &
+               )
+
+        A_grid(itheta) = (C_sin - C_cos) / 2d0
+        B_grid(itheta) = (C_sin + C_cos) / 2d0
+      
+        b2gd_theta_0 = b2gd_theta_0 + theta_inc
+
+      end do
+
+
+      ! Compute alms.
+      lsign = +1d0
+      do l=1, lmax
+         
+         ! Invert lsign
+         lsign=-lsign
+
+         ! Compute integrals.
+         ! Use precomputed A(theta) and B(theta).
+            IA = bianchi2_sky_comp_IX(l, Nuse, A_grid)
+            IB = bianchi2_sky_comp_IX(l, Nuse, B_grid)
+
+         ! Compute alm for a given 1. Only m=1 is non-zero.
+            alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
+
+      end do
+
+!      write(*,'(a)') ' Percent complete: 100.0%'
+ 
+      ! Convert Delta_T/T alm computed to Delta_T alm.
+      alm = BIANCHI2_CMB_T * alm
+
+      ! Rotate alms if Euler angles present and ar least one angle non-zero
+      if(present(alpha) .and. present(beta) .and. present(gamma) &
+           .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
+
+         write(*,*) ' Rotation of the alm '
+         allocate(dl(-lmax:lmax,-lmax:lmax),stat=fail)
+         allocate(alm_rotate(0:lmax,0:lmax), stat=fail)
+         if(fail/=0) then
+            call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
+                    'bianchi_sky_rotate')
+         endif
+         alm_rotate = (0d0,0d0)
+
+         do l = 1, lmax
+            call s2_dl_beta_operator(dl, real(beta,s2_dp), l)        
+            do m = 0,l
+
+               !Calculation of  Dl,m,+-1
+               Dm_p1 = exp(-icmpx*m*alpha) * dl(m, 1) * exp(-icmpx*gamma)
+               Dm_m1 = exp(-icmpx*m*alpha) * dl(m,-1) * exp( icmpx*gamma)
+               
+               !Rotation of the alm
+               alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
+             
+            end do
+         end do  
+
+         ! Initialise sky object with alm_rotate.
+         b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)    
+
+         deallocate(alm_rotate)
+         deallocate(dl)
+
+      else
+
+         write(*,'(a)') ' No rotation needed '
+
+         ! Initialise sky object with alm.
+         b%sky = s2_sky_init(alm, lmax, 1, nside)
+      endif
+
+      ! Set initialised status.
+      b%init = .true.
+
+      call bianchi2_sky_compute_map(b,nside)
+
+      ! Free memory.
+      deallocate(alm)
+      deallocate(A_grid)
+      deallocate(B_grid)
+
+    end function bianchi2_sky_init_alm
 
 
 
@@ -652,8 +931,8 @@ module bianchi2_sky_mod
     !
     ! Revisions:
     !   October 2005 - Written by Jason McEwen
-    !   April 2012 - Modifications by Thibaut Josset
-    !                Added option to perform rotation in harmonic space.
+    !   April   2012 - Modifications by Thibaut Josset
+    !                  Added option to perform rotation in harmonic space.
     !--------------------------------------------------------------------------
 
     subroutine bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,&
@@ -690,14 +969,14 @@ module bianchi2_sky_mod
          !Choose between rotation pixel by pixel or rotation of the alm
          if (rotation_alm == .false.) then
 
-            write(*,*) 'Rotation pixel by pixel with s2_sky_rotate'
+            write(*,'(a)') ' Rotation pixel by pixel with s2_sky_rotate '
             call s2_sky_rotate(b%sky, alpha, beta, gamma)
 
          else
 
-            write(*,*) 'Rotation of the alm'
+            write(*,'(a)') ' Rotation of the alm '
             allocate(dl(-lmax:lmax,-lmax:lmax),stat=fail)
-            allocate(alm(0:lmax,0:lmax), stat=fail)
+            allocate(alm(0:lmax,0:1), stat=fail)
             allocate(alm_rotate(0:lmax,0:lmax), stat=fail)
             if(fail/=0) then
                call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
@@ -706,7 +985,7 @@ module bianchi2_sky_mod
             alm_rotate = 0e0
 
             !get alm
-            call bianchi2_sky_compute_alm(b,lmax,lmax)
+            call bianchi2_sky_compute_alm(b,lmax,1)
             call bianchi2_sky_get_alm(b, alm)
 
             ! perform rotation in harmonic space,&
@@ -727,23 +1006,25 @@ module bianchi2_sky_mod
              
                end do
 
-           end do
+            end do
            
-           !Make free b%sky
-           call s2_sky_free(b%sky)
+            !Make free b%sky
+            call s2_sky_free(b%sky)
 
-           ! Compute sky object with rotated alms
-           b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)
+            ! Compute sky object with rotated alms
+            b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)
            
-           call bianchi2_sky_compute_map(b,nside)
+            call bianchi2_sky_compute_map(b,nside)
 
-           ! Dellocate memory used for rotating alms
-           deallocate(alm_rotate)
-           deallocate(alm)
-           deallocate(dl)
+            ! Dellocate memory used for rotating alms
+            deallocate(alm_rotate)
+            deallocate(alm)
+            deallocate(dl)
 
          end if
 
+       else
+          write(*,'(a)') ' No rotation needed '
        endif
 
     end subroutine bianchi2_sky_rotate
@@ -1017,6 +1298,121 @@ module bianchi2_sky_mod
       F1r=2d0/sqrt(t0)
 
     end function F1r
+
+
+
+
+
+
+
+    !--------------------------------------------------------------------------
+    ! Bianchi integrals
+    !--------------------------------------------------------------------------
+ 
+    !--------------------------------------------------------------------------
+    ! bianchi2_sky_comp_IX
+    !
+    !! Compute IA and IB integrals required in Bianchi2 simulation.
+    !!
+    !! Variables:
+    !!   - l: Harmonic l to compute IA_l or IB_l for.
+    !!   - Nuse : Number of terms in use in the integration.
+    !!   - X_grid : Contains the values A_grid(itheta) or B_grid(itheta).
+    !
+    !! @author T. Josset
+    !! @version 0.1 April 2012
+    !--------------------------------------------------------------------------  
+
+    function bianchi2_sky_comp_IX(l, Nuse, X_grid) result(IX)
+
+      integer, intent(in) :: l, Nuse
+      real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B
+      real(s2_dp) :: integrand, IX
+
+      integer :: itheta
+      real(s2_dp) :: dtheta, theta
+
+
+      IX = 0d0
+      theta = 0d0
+      dtheta = (pi - 0d0) / Real(Nuse, s2_dp)
+      
+      do itheta = 0, Nuse-1
+         
+         integrand = sin(theta) * X_grid(itheta) * plgndr(l,1,cos(theta))
+         IX = IX + integrand*dtheta
+         theta = theta + dtheta
+         
+      end do
+
+      IX = IX * sqrt( (2d0*l+1d0) / real(4d0*pi*l*(l+1d0), s2_dp) ) 
+
+      return
+    end function bianchi2_sky_comp_IX
+ 
+
+    !--------------------------------------------------------------------------
+    ! Special function routines
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    ! plgndr
+    !
+    !! Computes the associated Legendre function for l and m.
+    !!  Adapted from numerical recipes 
+    !!
+    !! Notes:
+    !!   - Numerical recipies comment:
+    !!     Computes the associated Legendre polynomial P_m^l(x).
+    !!
+    !! Variables:
+    !!   - l: Legendre function l parameter.
+    !!   - m: Legendre function m parameter.
+    !!   - x: Point to evaluate specified Legendre funtion at.
+    !
+    !! @author J. D. McEwen
+    !! @version 0.1 June 2005
+    !
+    ! Revisions:
+    !   June 2005 - Written by Jason McEwen
+    !--------------------------------------------------------------------------
+
+    function plgndr(l,m,x)
+
+      integer :: l, m
+      real(s2_dp) :: plgndr, x
+
+      integer :: i, ll
+      real(s2_dp) ::  fact, pll, pmm, pmmp1, somx2
+
+      if(m<0 .or. m>l .or. abs(x)>1d0) stop 'bad arguments in plgndr'
+
+      pmm=1.                     ! Compute Pmm.
+      if(m.gt.0) then
+         somx2=sqrt((1.-x)*(1.+x))
+         fact=1.
+         do i=1,m
+            pmm=-pmm*fact*somx2
+            fact=fact+2.
+         enddo
+      endif
+      if(l.eq.m) then
+         plgndr=pmm
+      else
+         pmmp1=x*(2*m+1)*pmm      ! Compute Pm m+1.
+         if(l.eq.m+1) then
+            plgndr=pmmp1
+         else                    ! Compute Pm  l , l > m+ 1.
+            do ll=m+2,l
+               pll=(x*(2*ll-1)*pmmp1-(ll+m-1)*pmm)/(ll-m)
+               pmm=pmmp1
+               pmmp1=pll
+            enddo
+            plgndr=pll
+         endif
+      endif
+      return
+    end function plgndr
 
 
 end module bianchi2_sky_mod
