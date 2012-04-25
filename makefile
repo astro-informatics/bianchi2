@@ -92,6 +92,7 @@ S2BIN        = $(S2DIR)/bin
 S2DOC        = $(S2DIR)/doc
 
 BIANCHI2DIR   = $(PROGDIR)/bianchi2
+BIANCHI2SRCPAR= $(BIANCHI2DIR)/src
 BIANCHI2SRC   = $(BIANCHI2DIR)/src/mod
 BIANCHI2PROG  = $(BIANCHI2DIR)/src/prog
 BIANCHI2INC   = $(BIANCHI2DIR)/include
@@ -191,24 +192,15 @@ $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a: $(BIANCHI2OBJ)
 
 # Documentation
 
-docs:
-	f90doc_fpp $(BIANCHI2SRC)/*.f90
-	f90doc_fpp $(BIANCHI2PROG)/*.f90
-	ln_multi $(S2DOC)/s2_*
-	ln_multi $(S2DOC)/index_s2.html
-	mv *.html $(BIANCHI2DOC)/.
-	addstyle $(BIANCHI2DOC)/bianchi2_*
-
-cleandocs:
-	rm -f $(BIANCHI2DOC)/bianchi2_*.html
-	rm -f $(BIANCHI2DOC)/s2_*.html
-	rm -f $(BIANCHI2DOC)/index_s2.html
+.PHONY: doc
+doc:
+	doxygen $(BIANCHI2SRCPAR)/doxygen.config
+.PHONY: cleandoc
+cleandoc:
+	rm -f $(BIANCHI2DOC)/html/*
 
 
 # Cleaning up
-
-cleandoc: 
-	rm -f doc/bianchi2*.html
 
 clean:	tidy
 	rm -f $(BIANCHI2INC)/*.mod

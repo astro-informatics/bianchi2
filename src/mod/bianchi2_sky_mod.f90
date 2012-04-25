@@ -1,23 +1,32 @@
+!==============================================================================
+!> \mainpage Bianchi2
+!!
+!! The Bianchi2 package provides functionality to simulate Bianchi
+!! Type VIIh induced temperature fluctuations in CMB maps of a
+!! universe with shear and rotation. The implementation is based on
+!! the solutions to the Bianchi models derived by Anthony Lasenby (not
+!! yet published) that incorporate a cosmological
+!! constant. Functionality is provided to compute the induced
+!! fluctuations on the sphere directly in either real or harmonic
+!! space.
+!!
+!! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
+!! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+!!          Anthony Lasenby</a>
+!! \authors Thibaut Josset
+!==============================================================================
+
+
 !------------------------------------------------------------------------------
 ! bianchi2_sky_mod -- BIANCHI2 library sky class
 !
-!! Provides functionality to simulate a Bianchi2 VII_h model of the CMB, 
+!> Provides functionality to simulate a Bianchi2 VII_h model of the CMB, 
 !! incorporating a cosmological constant.
 !! Uses the s2_sky module to create healpix sky maps.
-!
-!! @author A. N. Lasenby & J. D. McEwen (mcewen@mrao.cam.ac.uk)
-!! @version 0.1 October 2005
-!
-! Revisions:
-!   October 2005 - Written by Anthony Lasenby & Jason McEwen 
-!                  ANL has written all numerical code to compute Bianchi
-!                  induced temperature fluctuations.  JDM has merely compiled
-!                  this into a fortran 90 package that interfaces with 
-!                  Healpix using the s2 library.
-!
-!   April   2012 - Written by Thibaut Josset
-!                  Function bianchi2_sky_init_alm added :
-!                  simulation and rotation performed in harmonic space.
+!!
+!! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
+!! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+!!          Anthony Lasenby</a>
 !------------------------------------------------------------------------------
 
 module bianchi2_sky_mod
@@ -62,7 +71,7 @@ module bianchi2_sky_mod
   ! Global variables
   !---------------------------------------
 
-  ! CMB T to convert Delta_T / T map to just Delta_T map.
+  !> CMB T to convert Delta_T / T map to just Delta_T map.
 #ifdef MILLIK
   ! Produce maps in units of mK.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 2.725d3
@@ -76,27 +85,27 @@ module bianchi2_sky_mod
   ! Data types
   !---------------------------------------
 
-  !! - init: Initialisation status.
-  !! - omega_matter: Matter density (input parameter).
-  !! - omega_lambda: Lambda density (input parameter).
-  !! - h: Bianchi h parameter that controls `spiralness' (related to 
-  !!   characteristic wavelength over which basis vectors change 
-  !!   orientation) (input parameter).
-  !! - zE: Red shift (input parameter).
-  !! - wH: Normalised vorticity (normalised to Hubble constant) (input 
-  !!   parameter).
-  !! - rhand: Logical specifying handedness of map (true=right).
-  !! - sky: Simulated map.
-
+  !> Bianchi 2 sky object that contains parameters and simulated sky.
   type, public :: bianchi2_sky
      private
+     !> Initialisation status.
      logical :: init = .false.
+     !> Matter density (input parameter).
      real(s2_dp) :: omega_matter = 0.0d0
+     !> Lambda density (input parameter).
      real(s2_dp) :: omega_lambda = 0.0d0
+     !> Bianchi h parameter that controls `spiralness' (related to 
+     !! characteristic wavelength over which basis vectors change 
+     !! orientation) (input parameter).
      real(s2_dp) :: h = 0.0d0
+     !> Red shift (input parameter).
      real(s2_dp) :: zE = 0.0d0
+     !> wH: Normalised vorticity (normalised to Hubble constant) (input 
+     !! parameter).
      real(s2_dp) :: wH = 0.0d0
+     !> Logical specifying handedness of map (true=right).
      logical :: rhand = .true.
+     !> Simulated map.
      type(s2_sky) :: sky
   end type bianchi2_sky
 
@@ -109,27 +118,24 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_init
     !
-    !! Initialise bianchi2 object by performing a bianchi2 simulation that
+    !> Initialise bianchi2 object by performing a bianchi2 simulation that
     !! incorporates a cosmological constant.
     !!
     !! Variables:
-    !!  - omega_matter_in: Input omega_matter parameter (see bianchi2 data
+    !!  \param[in] omega_matter_in Input omega_matter parameter (see bianchi2 data
     !!    type for explanation).
-    !!  - omega_lambda_in: Input omega_lambda parameter (see bianchi2 data
+    !!  \param[in] omega_lambda_in Input omega_lambda parameter (see bianchi2 data
     !!    type for explanation).
-    !!  - h: Input h parameter (see bianchi2 data type for explanation).
-    !!  - zE_in: Input zE parameter (see bianchi2 data type for explanation).
-    !!  - wH: Input wH parameter (see bianchi2 data type for explanation).
-    !!  - rhand: Logical to specify handedness of map.
-    !!  - nside: Nside of Healpix map to generate.
-    !!  - b: Initialised bianchi2 object with simulated map calculated.
-    !
-    !! @author A.N. Lasenby and J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Bianci computation part written by ANL.  Compiled into
-    !                  init function and interfaced with s2 library by JDM.
+    !!  \param[in] h Input h parameter (see bianchi2 data type for explanation).
+    !!  \param[in] zE_in Input zE parameter (see bianchi2 data type for explanation).
+    !!  \param[in] wH Input wH parameter (see bianchi2 data type for explanation).
+    !!  \param[in] rhand Logical to specify handedness of map.
+    !!  \param[in] nside Nside of Healpix map to generate.
+    !!  \retval b Initialised bianchi2 object with simulated map calculated.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
+    !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+    !!          Anthony Lasenby</a>
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
