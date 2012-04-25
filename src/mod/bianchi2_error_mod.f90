@@ -28,7 +28,7 @@ module bianchi2_error_mod
   ! Global variables
   !---------------------------------------
 
-  integer, parameter :: BIANCHI2_ERROR_NUM = 9
+  integer, parameter :: BIANCHI2_ERROR_NUM = 11
 
   integer, public, parameter :: &
     BIANCHI2_ERROR_NONE = 0, &
@@ -39,7 +39,9 @@ module bianchi2_error_mod
     BIANCHI2_ERROR_SIM_PARAM_INVALID = 5, &
     BIANCHI2_ERROR_SIM_NARG = 6, &
     BIANCHI2_ERROR_SKY_NUM_FAIL = 7, &
-    BIANCHI2_ERROR_TMPLFIT_FAIL = 8
+    BIANCHI2_ERROR_TMPLFIT_FAIL = 8, &
+    BIANCHI2_ERROR_PLM1TABLE_THETA_INVALID = 9, &
+    BIANCHI2_ERROR_PLM1TABLE_L_INVALID = 10
 
   !> Each element of the error_comment array must have the same length, thus
   ! space with trailing space characters.  When come to use trim to remove 
@@ -56,7 +58,9 @@ module bianchi2_error_mod
       'Invalid simulation parameter                                             ', &
       'Invalid number of command line parameters                                ', &
       'Numerical routine failed                                                 ', &
-      'Template fitting failed                                                  ' &
+      'Template fitting failed                                                  ', & 
+      'Invalid theta for Plm1 lookup table (not on regular grid)                ', &
+      'Invalid l for Plm1 lookup table (out of range)                           '  &
       /) 
   
   !> Default program halt status of each error type.
@@ -68,6 +72,8 @@ module bianchi2_error_mod
       .true.,  &
       .true.,  &
       .true.,  & 
+      .true.,  &
+      .true.,  &
       .true.,  &
       .true.,  &
       .true.,  &

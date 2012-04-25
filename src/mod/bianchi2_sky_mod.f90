@@ -79,7 +79,8 @@ module bianchi2_sky_mod
   !> Produce Delta_T / T maps.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 1d0 
 #endif
-
+  !> Logical to disable the lookup table.
+  logical, parameter :: BIANCHI2_DISABLE_PLM1TABLE = .false.
 
   !---------------------------------------
   ! Data types
@@ -1276,10 +1277,13 @@ module bianchi2_sky_mod
 
     function bianchi2_sky_comp_IX(l, Nuse, X_grid) result(IX)
 
+      use bianchi2_plm1table_mod
+
       integer, intent(in) :: l, Nuse
       real(s2_dp), intent(in) :: X_grid(0:) !> X = A or B.
-      real(s2_dp) :: integrand, IX
-
+      real(s2_dp) :: IX
+      
+      real(s2_dp) :: integrand, Plm1
       integer :: itheta
       real(s2_dp) :: dtheta, theta
 
@@ -1290,7 +1294,19 @@ module bianchi2_sky_mod
       
       do itheta = 0, Nuse-1
          
-         integrand = sin(theta) * X_grid(itheta) * plgndr(l,1,cos(theta))
+         if (l>0 .and. l<=BIANCHI2_PLM1TABLE_LMAX .and. &
+                Nuse == BIANCHI2_PLM1TABLE_NTHETA .and. &
+                .not. BIANCHI2_DISABLE_PLM1TABLE) then
+
+            Plm1 = bianchi2_plm1table_getval(l,theta)
+
+         else
+
+            Plm1 = plgndr(l, 1, cos(theta))
+
+         end if
+
+         integrand = sin(theta) * X_grid(itheta) * Plm1
          IX = IX + integrand*dtheta
          theta = theta + dtheta
          

@@ -22,7 +22,7 @@ ifneq ($(USEPGPLOT),yes)
 endif
 
 OPT = $(OPTPGPLOT) $(OPTF95) -DWMAP5 \
-      -O3 -DS2_VERSION=\"1.0b2\" -DS2_BUILD=\"`svnversion -n .`\" 
+      -O3 -DS2_VERSION=\"BIANCHI2_1.0b2\" -DS2_BUILD=\"`svnversion -n .`\" 
 
 OPT = $(OPTPGPLOT) -DMILLIK 
 
@@ -164,9 +164,10 @@ LDFLAGS =  -L$(BIANCHI2LIB) -l$(BIANCHI2LIBNM) \
 
 # ======== OBJECT FILES TO MAKE ========
 
-BIANCHI2OBJ = $(BIANCHI2INC)/bianchi2_sky_mod.o       \
-             $(BIANCHI2INC)/bianchi2_globaldata_mod.o \
-             $(BIANCHI2INC)/bianchi2_error_mod.o      
+BIANCHI2OBJ = $(BIANCHI2INC)/bianchi2_sky_mod.o        \
+	      $(BIANCHI2INC)/bianchi2_plm1table_mod.o  \
+              $(BIANCHI2INC)/bianchi2_globaldata_mod.o \
+              $(BIANCHI2INC)/bianchi2_error_mod.o      
 
 
 # ======== MAKE RULES ========
@@ -223,9 +224,12 @@ tidy:
 $(BIANCHI2INC)/bianchi2_error_mod.o:     $(BIANCHI2SRC)/bianchi2_error_mod.f90
 $(BIANCHI2INC)/bianchi2_globaldata_mod.o: $(BIANCHI2SRC)/bianchi2_globaldata_mod.f90 \
                                          $(BIANCHI2INC)/bianchi2_error_mod.o
-$(BIANCHI2INC)/bianchi2_sky_mod.o:       $(BIANCHI2SRC)/bianchi2_sky_mod.f90 \
-                                         $(BIANCHI2INC)/bianchi2_globaldata_mod.o \
+$(BIANCHI2INC)/bianchi2_plm1table_mod.o: $(BIANCHI2SRC)/bianchi2_plm1table_mod.f90 \
                                          $(BIANCHI2INC)/bianchi2_error_mod.o
+$(BIANCHI2INC)/bianchi2_sky_mod.o:       $(BIANCHI2SRC)/bianchi2_sky_mod.f90 \
+                                         $(BIANCHI2INC)/bianchi2_plm1table_mod.o \
+                                         $(BIANCHI2INC)/bianchi2_globaldata_mod.o \
+                                         $(BIANCHI2INC)/bianchi2_error_mod.o 
 
 
 # Program dependencies and compilation

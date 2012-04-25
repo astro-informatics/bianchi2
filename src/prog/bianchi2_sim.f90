@@ -46,6 +46,8 @@ program bianchi2_sim
   logical, parameter :: RHAND_DEFAULT = .true.
   logical, parameter :: HARMONIC_SPACE_DEFAULT = .true.
   integer, parameter :: NUSE_DEFAULT = 100
+  integer, parameter :: LMAX_DEFAULT = 64
+  integer, parameter :: NSIDE_DEFAULT = 128
   character(len=*), parameter :: FILE_TYPE_MAP_STR = 'map'
   character(len=*), parameter :: FILE_TYPE_SKY_STR = 'sky'
 
@@ -77,9 +79,9 @@ program bianchi2_sim
   h = H_DEFAULT
   zE = ZE_DEFAULT
   wH = WH_DEFAULT
-  nside = 64
-  lmax = 64
-  rhand = .true.
+  nside = NSIDE_DEFAULT
+  lmax = LMAX_DEFAULT
+  rhand = RHAND_DEFAULT
 
   harmonic_space = HARMONIC_SPACE_DEFAULT
   Nuse = NUSE_DEFAULT
@@ -261,19 +263,18 @@ program bianchi2_sim
     end if
   end if
 
-  !> Get lmax if applying beam.
-  if(apply_beam) then
+  !> Get lmax.
      description = concatnl("", &
           "Enter the maximum harmonic l (lmax) for the simulated sky: ")
 10   continue
      lmax = parse_int(handle, 'lmax', &
-          default=lmax, descr=description)
+          default=LMAX_DEFAULT, descr=description)
      if(lmax < 0) then
         if(handle%interactive) goto 10
         call bianchi2_error(BIANCHI2_ERROR_SIM_PARAM_INVALID, 'bianchi2_sim', &
              comment_add='lmax invalid')
      endif
-  end if
+
 
   !> Get nside.
   description = concatnl("", &
@@ -281,7 +282,7 @@ program bianchi2_sim
        "(npix = 12*nside**2, where nside must be a power of 2)")
 11 continue
   nside = parse_int(handle, 'nside', &
-       default=nside, descr=description)
+       default=NSIDE_DEFAULT, descr=description)
   if(nside2npix(nside) < 0) then
      if(handle%interactive) goto 11
      call bianchi2_error(BIANCHI2_ERROR_SIM_PARAM_INVALID, 'bianchi2_sim', &
