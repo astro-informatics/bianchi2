@@ -1,22 +1,13 @@
 !------------------------------------------------------------------------------
 ! bianchi2_sim -- BIANCHI2 simulation program
 !
-!! Simulate a Bianchi2 VII_h model of the CMB, incorporating a cosmological
+!> Simulate a Bianchi2 VII_h model of the CMB, incorporating a cosmological
 !! constant.
-!
-!! @author A. N. Lasenby & J. D. McEwen (mcewen@mrao.cam.ac.uk)
-!! @version 0.1 October 2005
-!
-! Revisions:
-!   October 2005 - Written by Anthony Lasenby & Jason McEwen 
-!                  ANL has written all numerical code to compute Bianchi
-!                  induced temperature fluctuations.  JDM has merely compiled
-!                  this into a fortran 90 package that interfaces with 
-!                  Healpix using the s2 library.
-!
-!   April   2012 - Written by Thibaut Josset
-!                  Some parameters added to choose computing
-!                  in real space or in harmonic space.
+!!
+!! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
+!! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+!!          Anthony Lasenby</a>
+!! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
 !------------------------------------------------------------------------------
 
 program bianchi2_sim
@@ -65,7 +56,7 @@ program bianchi2_sim
   type(bianchi2_sky) :: b
   real(s2_dp) :: omega_matter, omega_lambda, h, zE, wH
   integer :: nside, lmax
-  ! Default angles in degrees for user input, but converted to radians later.
+  !> Default angles in degrees for user input, but converted to radians later.
   real(s2_sp) :: alpha=0e0, beta=-90e0, gamma=0e0 
   logical :: rhand = .true.
   logical :: apply_beam = .false.
@@ -74,11 +65,11 @@ program bianchi2_sim
   logical :: harmonic_space
   integer :: Nuse
 
-  logical :: rotation_alm = .false. ! Choose true only for 
+  logical :: rotation_alm = .false. !> Choose true only for 
                                     ! simulation in real space but 
                                     ! rotation in harmonic space.
 
-  ! Set default parameter values.
+  !> Set default parameter values.
   filename_out = 'sky.fits'
   omega_matter = OMEGA_MATTER_DEFAULT
   omega_lambda = OMEGA_LAMBDA_DEFAULT
@@ -104,7 +95,7 @@ program bianchi2_sim
   ! Parse parameters
   !---------------------------------------
  
-  ! Initialise file parser.
+  !> Initialise file parser.
   if(nArguments() == 0) then
      filename_param = ''
   else
@@ -118,7 +109,7 @@ program bianchi2_sim
 
 99 continue
 
-  ! Get omega_matter.
+  !> Get omega_matter.
   write(line,'(a,f4.1,a,f4.1,a)') '(In the range ', &
        OMEGA_MATTER_LOWER, ' <= omega_matter < ', OMEGA_MATTER_UPPER, ')'
   description = concatnl('', &
@@ -134,7 +125,7 @@ program bianchi2_sim
           comment_add='omega_matter invalid')
   end if
 
-  ! Get omega_lambda.
+  !> Get omega_lambda.
   write(line,'(a,f4.1,a,f4.1,a)') '(In the range ', &
        OMEGA_LAMBDA_LOWER, ' <= omega_lambda < ', OMEGA_LAMBDA_UPPER, ')'
   description = concatnl('', &
@@ -150,7 +141,7 @@ program bianchi2_sim
           comment_add='omega_lambda invalid')
   end if
 
-  ! Check model closed.
+  !> Check model closed.
   if((omega_matter + omega_lambda) >= 1d0) then
     if(handle%interactive) then
       write(*,*)
@@ -161,7 +152,7 @@ program bianchi2_sim
           comment_add='Only open models are allowed')
   end if
 
-  ! Get h.
+  !> Get h.
   write(line,'(a,f4.1,a,f4.1,a)') '(In the range ', &
        H_LOWER, ' <= h <= ', H_UPPER, ')'
   description = concatnl('', &
@@ -177,7 +168,7 @@ program bianchi2_sim
 
   end if
 
- ! Get zE.
+ !> Get zE.
   write(line,'(a,e8.2,a,e8.2,a)') '(In the range ', &
        ZE_LOWER, ' <= zE <= ', ZE_UPPER, ')'
   description = concatnl('', &
@@ -193,7 +184,7 @@ program bianchi2_sim
 
   end if
 
-  ! Get wH.
+  !> Get wH.
   description = concatnl('', &
        'Enter wH: ')
 5 continue
@@ -205,13 +196,13 @@ program bianchi2_sim
           comment_add='wH invalid')
   end if
 
-  ! Get right-handedness status.
+  !> Get right-handedness status.
   description = concatnl('', &
        'Enter right-handedness status (logical): ')
   rhand = parse_lgt(handle, 'rhand', &
        default=RHAND_DEFAULT, descr=description)
 
-  ! Get alpha.
+  !> Get alpha.
   description = concatnl('', &
        'Enter alpha (degrees): ')
 6 continue
@@ -224,7 +215,7 @@ program bianchi2_sim
   end if
   alpha = alpha / 180e0 * pi
 
-  ! Get beta.
+  !> Get beta.
   description = concatnl('', &
        'Enter beta (degrees): ')
 7 continue
@@ -237,7 +228,7 @@ program bianchi2_sim
   end if
   beta = beta / 180e0 * pi
 
-  ! Get gamma.
+  !> Get gamma.
   description = concatnl('', &
        'Enter gamma (degrees): ')
 8 continue
@@ -250,14 +241,14 @@ program bianchi2_sim
   end if
   gamma = gamma / 180e0 * pi
 
-  ! Get apply_beam.
+  !> Get apply_beam.
   description = concatnl('', &
     'Enter apply_beam status (logical): ')
   apply_beam = parse_lgt(handle, 'apply_beam', &
     default=apply_beam, descr=description)
 
   if(apply_beam) then
-    ! Get beam fwhm.
+    !> Get beam fwhm.
     description = concatnl('', &
        'Enter beam fwhm (arcmin): ')
 9  continue
@@ -270,7 +261,7 @@ program bianchi2_sim
     end if
   end if
 
-  ! Get lmax if applying beam.
+  !> Get lmax if applying beam.
   if(apply_beam) then
      description = concatnl("", &
           "Enter the maximum harmonic l (lmax) for the simulated sky: ")
@@ -284,7 +275,7 @@ program bianchi2_sim
      endif
   end if
 
-  ! Get nside.
+  !> Get nside.
   description = concatnl("", &
        "Enter the resolution parameter (nside) for the simulated sky: ", &
        "(npix = 12*nside**2, where nside must be a power of 2)")
@@ -297,34 +288,34 @@ program bianchi2_sim
           comment_add='nside invalid')
   endif
   
-  ! Get harmonic_space.
+  !> Get harmonic_space.
   description = concatnl('', &
        'Enter harmonic_space status (logical): ')
   harmonic_space = parse_lgt(handle, 'harmonic_space', &
        default=HARMONIC_SPACE_DEFAULT, descr=description)
 
 
-  ! Get Nuse.
+  !> Get Nuse.
   description = concatnl("", &
        "Enter the number of terms (Nuse) used for the integrations: ")
   Nuse = parse_int(handle, 'Nuse', &
        default=NUSE_DEFAULT, descr=description)
  
 
-  ! Get filename_out.
+  !> Get filename_out.
   description = concatnl('', &
        'Enter filename_out: ')
   filename_out = parse_string(handle, 'filename_out', &
        default=trim(filename_out), descr=description)
 
-  ! Get output file type: map or sky.
+  !> Get output file type: map or sky.
   description = concatnl('', &
        'Enter output file type (filetype={map; sky}): ')
 12  continue
   filetype_str = parse_string(handle, 'filetype', &
        default=trim(filetype_str), descr=description)
 
-  ! Set filetype integer status.
+  !> Set filetype integer status.
   select case (filetype_str)
      
     case (FILE_TYPE_MAP_STR)
@@ -345,11 +336,11 @@ program bianchi2_sim
   ! Run simulation and save sky
   !---------------------------------------
 
-  ! Simulated bianchi2 sky.
+  !> Simulated bianchi2 sky.
   write(*,'(a)')
 
 
-  ! Initialise bianchi2 object.
+  !> Initialise bianchi2 object.
   if (harmonic_space == .true.) then
      
      write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space...'
@@ -367,34 +358,34 @@ program bianchi2_sim
      write(*,'(a)') 'Simulation complete'
      write(*,'(a)')
   
-     ! Perform rotation
+     !> Perform rotation
      call bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,rotation_alm)
 
   end if
 
-  ! Apply beam if required.
+  !> Apply beam if required.
   if(apply_beam) then
       
-    ! Recompute alms if necessary (if not necessary does nothing).
+    !> Recompute alms if necessary (if not necessary does nothing).
     ! Note, if compute alms directly but then perform
     ! bianchi2_sky_rotate, alms are removed and must be recomputed.
     call bianchi2_sky_compute_alm(b, lmax, lmax)
 
-    ! If map already present then apply beam will recompute the map.
+    !> If map already present then apply beam will recompute the map.
     call bianchi2_sky_apply_beam(b, fwhm, lmax)
 
   end if
  
-  ! Save sky.
+  !> Save sky.
   call bianchi2_sky_write(b, filename_out, filetype)
   write(*,'(a,a)') 'Simulated map written to ', trim(filename_out)
   write(*,'(a)')
 
-  ! Write bianchi2 simulation variables to standard output.
+  !> Write bianchi2 simulation variables to standard output.
   write(*,'(a)') 'Simulation parameters:'
   call bianchi2_sky_param_write(b)
 
-  ! Free bianchi2 object.
+  !> Free bianchi2 object.
   call bianchi2_sky_free(b)
 
 end program bianchi2_sim

@@ -12,7 +12,7 @@ program bianchi2_sim_looptest
   integer :: nside
   logical :: rhand
 
-  ! Set parameters.
+  !> Set parameters.
   omega_matter = 0.3d0
   omega_lambda = 0.6d0
   h = 1d-2
@@ -23,11 +23,11 @@ program bianchi2_sim_looptest
 
   do i = 1,10000
 
-    ! Initialise bianchi2 object.
+    !> Initialise bianchi2 object.
     b = bianchi2_sky_init(omega_matter, omega_lambda, h, zE, wH, rhand, &
       nside)
   
-    ! Free bianchi2 object.
+    !> Free bianchi2 object.
     call bianchi2_sky_free(b)
 
   end do

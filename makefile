@@ -20,6 +20,10 @@ FC      = ifort
 ifneq ($(USEPGPLOT),yes)
   OPTPGPLOT     = -DNO_PGPLOT
 endif
+
+OPT = $(OPTPGPLOT) $(OPTF95) -DWMAP5 \
+      -O3 -DS2_VERSION=\"1.0b2\" -DS2_BUILD=\"`svnversion -n .`\" 
+
 OPT = $(OPTPGPLOT) -DMILLIK 
 
 ifeq ($(FC),nagfor)

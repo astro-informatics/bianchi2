@@ -1,15 +1,11 @@
 !------------------------------------------------------------------------------
 ! bianchi2_error_mod  -- BIANCHI2 library error class
 !
-!! Functionality to handle errors that may occur in the bianchi2 library. 
+!> Functionality to handle errors that may occur in the bianchi2 library. 
 !! Public bianchi2 error codes are defined, with corresponding private error 
 !! comments and default halt execution status.
-!
-!! @author J. D. McEwen (mcewen@mrao.cam.ac.uk)
-!! @version 0.1 October 2005
-!
-! Revisions:
-!   October 2005 - Written by Jason McEwen
+!!
+!! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !------------------------------------------------------------------------------
 
 module bianchi2_error_mod
@@ -45,10 +41,10 @@ module bianchi2_error_mod
     BIANCHI2_ERROR_SKY_NUM_FAIL = 7, &
     BIANCHI2_ERROR_TMPLFIT_FAIL = 8
 
-  ! Each element of the error_comment array must have the same length, thus
+  !> Each element of the error_comment array must have the same length, thus
   ! space with trailing space characters.  When come to use trim to remove 
   ! trailing spaces.
-  !! Comment associated with each error type.
+  ! Comment associated with each error type.
   character(len=S2_STRING_LEN), parameter :: &
     error_comment(BIANCHI2_ERROR_NUM) = &
       (/ & 
@@ -63,7 +59,7 @@ module bianchi2_error_mod
       'Template fitting failed                                                  ' &
       /) 
   
-  !! Default program halt status of each error type.
+  !> Default program halt status of each error type.
   logical, parameter :: &
     halt_default(BIANCHI2_ERROR_NUM) = &
       (/ &
@@ -86,24 +82,20 @@ module bianchi2_error_mod
     !--------------------------------------------------------------------------
     ! bianchi2_error
     !
-    !! Display error message corresponding to error_code and halt program 
+    !> Display error message corresponding to error_code and halt program 
     !! execution if required.
     !!
     !! Variables:
-    !!   - error_code: Integer error code.
-    !!   - [procedure]: Procedure name where bianchi2_error called from.  Displayed 
+    !!   \param[in] error_code Integer error code.
+    !!   \apram[in] procedure Procedure name where bianchi2_error called from.  Displayed 
     !!     when error message printed to screen.
-    !!   - [comment_add]: If present, additional comment to append to default 
+    !!   \param[in] comment_add If present, additional comment to append to default 
     !!     error comment.
-    !!   - [comment_out]: If present the error comment is copied to comment_out
+    !!   \param[inout] comment_out If present the error comment is copied to comment_out
     !!     on output.
-    !!   - [halt_in]: If present overrides default halt value.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 August 2004
-    !
-    ! Revisions:
-    !   August 2004 - Written by Jason McEwen
+    !!   \param[in] halt_in  If present overrides default halt value.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
 
     subroutine bianchi2_error(error_code, procedure, comment_add, &
@@ -150,7 +142,7 @@ module bianchi2_error_mod
 
       end if
 
-      ! Copy error comment if comment_out present.
+      !> Copy error comment if comment_out present.
       if(present(comment_out)) comment_out = error_comment(error_code+1)
 
       !---------------------------------------

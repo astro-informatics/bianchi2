@@ -13,7 +13,7 @@
 !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
 !!          Anthony Lasenby</a>
-!! \authors Thibaut Josset
+!! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
 !==============================================================================
 
 
@@ -73,10 +73,10 @@ module bianchi2_sky_mod
 
   !> CMB T to convert Delta_T / T map to just Delta_T map.
 #ifdef MILLIK
-  ! Produce maps in units of mK.
+  !> Produce maps in units of mK.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 2.725d3
 #else
-  ! Produce Delta_T / T maps.
+  !> Produce Delta_T / T maps.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 1d0 
 #endif
 
@@ -174,7 +174,7 @@ module bianchi2_sky_mod
         return
       end if
 
-      ! Initialise parameters passed as arguments.
+      !> Initialise parameters passed as arguments.
       b%omega_matter = omega_matter_in
       b%omega_lambda = omega_lambda_in
       b%h = h
@@ -182,7 +182,7 @@ module bianchi2_sky_mod
       b%wH = wH
       b%rhand = rhand
 
-      ! Initialise healpix map settings.
+      !> Initialise healpix map settings.
       npix = nside2npix(nside)
       allocate(map(0:npix-1), stat=fail)
       map = 0d0
@@ -191,7 +191,7 @@ module bianchi2_sky_mod
            'bianchi2_sky_init')
       end if
 
-      ! Set handedness sign.
+      !> Set handedness sign.
       if(b%rhand) then
          handedness_sign = 1d0
       else
@@ -208,15 +208,13 @@ module bianchi2_sky_mod
 !            'bianchi2_sky_init')
 !       end if
 
-      ! Set global data.
+      !> Set global data.
       b2gd_Bianchi_h = b%h
       b2gd_Omega_matter = b%omega_matter
       b2gd_Omega_Lambda = b%omega_lambda
       b2gd_ze = b%zE
-      b2gd_alpha = sqrt(b%h)
-      b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
 
-      ! Initialise other variables.
+      !> Initialise other variables.
       nt_use = 3
       b2gd_alpha = sqrt(b%h)
       b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
@@ -224,11 +222,11 @@ module bianchi2_sky_mod
       tstop_use=-tau_needed
       Lambda = 3*b2gd_RH_start**2*b%omega_lambda
 
-      ! Set ring parameter values.
+      !> Set ring parameter values.
       nring = 4*nside - 1
       max_pix_per_ring = 4*nside
 
-      ! Allocate space for ring pixel indices.
+      !> Allocate space for ring pixel indices.
       allocate(ipixring(0:max_pix_per_ring-1), stat=fail)
       if(fail /= 0) then
          call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
@@ -236,58 +234,58 @@ module bianchi2_sky_mod
       end if
       ipixring = 0
 
-      ! Compute map value for each pixel in each ring.
+      !> Compute map value for each pixel in each ring.
       ! Do ring at a time since A and B functions of theta so once need
       ! to compute once for each ring.
-      do iring = 1, nring    ! Checked this and ring is indeed indexed from 1.
+      do iring = 1, nring    !> Checked this and ring is indeed indexed from 1.
 
 !          if(mod(iring,nring/4) == 0) then
 !             write(*,'(a,f5.1,a)') ' Percent complete: ', &
 !                  iring/real(nring,s2_sp)*100e0, '%'
 !          end if
 
-         ! Get ring_pix in order to determine theta of ring.
+         !> Get ring_pix in order to determine theta of ring.
          call in_ring(nside, iring, PHI_CENTRE, PHI_DIFF, ipixring, &
               & npixring, nest=0) ! Ring scheme!!!!!!!!!
 
-         ! Calculate thetaOB for current ring.
+         !> Calculate thetaOB for current ring.
          call pix2ang_ring(nside, ipixring(0), thetaOB, phiOB)
 
-         ! Set photon theta angle from observation angle.
+         !> Set photon theta angle from observation angle.
          theta0 = PI - thetaOB
 
-         ! Set global data.
+         !> Set global data.
          ! (Compute theta_0 for ANL's convention.)
          b2gd_theta_0 = theta0 - pi/2d0
 
-         ! Compute terms for constant theta.
+         !> Compute terms for constant theta.
          call get_results(tstop_use,R_final,RH_final,cos_bit_final,sin_bit_final)
          fact = sqrt(9.D0*b2gd_alpha**2+1.D0)*sqrt(1.D0+b2gd_alpha**2)* &
                 sqrt(1.D0-b%omega_matter-b%omega_lambda)**3.D0/b2gd_alpha**3 &
                 /b%omega_matter/6.D0
          U10_req = b%wH/fact
 
-         ! Compute map valus for all pixels in current ring.
+         !> Compute map valus for all pixels in current ring.
          do ipix = 0,npixring-1
 
-            ! Calculate thetaOB for current ring.
+            !> Calculate thetaOB for current ring.
             call pix2ang_ring(nside, ipixring(ipix), thetaOB, phiOB)
 
-            ! Set photon phi angle from observation angle.
+            !> Set photon phi angle from observation angle.
             phi0 = phiOB - PI
 
-            ! Account for handedness 
+            !> Account for handedness 
             ! (also component outside loop to account for handedness).
             phi0 = phi0 * handedness_sign
 
-            !  Compute phi_0 for ANL's convention.
+            !> Compute phi_0 for ANL's convention.
             b2gd_phi_0 = phi0 + 3d0/4d0*pi
 
-            ! Get first contribution.
+            !> Get first contribution.
             Phi1 = U10_req/R_final*(sin_bit_final*sin(b2gd_phi_0)+cos_bit_final*cos(b2gd_phi_0))
             map(ipixring(ipix)) = -Phi1/(1+b2gd_ze)*2d0   ! JDM: Need factor 2 to make agree
 
-            ! Now get end contribution.
+            !> Now get end contribution.
             final_dens = (3d0*RH_final**2-Lambda*R_final**2-3d0*b2gd_alpha**2)/(R_final**2)
             t0 = 3.D0/final_dens/R_final**5*cos((b2gd_phi_0*b2gd_alpha-b2gd_alpha*tstop_use- &
                 dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0+exp(-2.D0*b2gd_alpha*tstop_use)- &
@@ -309,16 +307,16 @@ module bianchi2_sky_mod
 
 !       write(*,'(a)') ' Percent complete: 100.0%'
 
-      ! Account for handedness.
+      !> Account for handedness.
       map = handedness_sign * map
 
-      ! Convert Delta_T/T map computed to Delta_T map.
+      !> Convert Delta_T/T map computed to Delta_T map.
       map = BIANCHI2_CMB_T * map
 
-      ! Initialise sky object with map.
+      !> Initialise sky object with map.
       b%sky = s2_sky_init(real(map,s2_sp), nside, S2_SKY_RING)
 
-      ! Set initialised status.
+      !> Set initialised status.
       b%init = .true.
 
 !       ! Free global data.
@@ -327,7 +325,7 @@ module bianchi2_sky_mod
 !       deallocate(b2gd_tarr)
 !       deallocate(b2gd_xarr)
 
-      ! Free memory.
+      !> Free memory.
       deallocate(map)
       deallocate(ipixring)
 
@@ -338,28 +336,27 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_init_alm
     !
-    !! Initialise bianchi2 object by performing a bianchi2 simulation that
+    !> Initialise bianchi2 object by performing a bianchi2 simulation that
     !! incorporates a cosmological constant.
     !!
     !! Variables:
-    !!  - omega_matter_in: Input omega_matter parameter (see bianchi2 data
+    !!  \param[in] omega_matter_in Input omega_matter parameter (see bianchi2 data
     !!    type for explanation).
-    !!  - omega_lambda_in: Input omega_lambda parameter (see bianchi2 data
+    !!  \param[in] omega_lambda_in: Input omega_lambda parameter (see bianchi2 data
     !!    type for explanation).
-    !!  - h: Input h parameter (see bianchi2 data type for explanation).
-    !!  - zE_in: Input zE parameter (see bianchi2 data type for explanation).
-    !!  - wH: Input wH parameter (see bianchi2 data type for explanation).
-    !!  - rhand: Logical to specify handedness of map.
-    !!  - nside: Nside of Healpix map to generate.
-    !!  - lmax: Maximum harmonic l to consider.
-    !!  - Nuse : Number of terms in use in the integrations IA and IB.
-    !!  - alpha: Alpha Euler angle of the rotation.
-    !!  - beta: Beta Euler angle of the rotation.
-    !!  - gamma: Gamma Euler angle of the rotation.
-    !!  
-    !
-    !! @author T. Josset
-    !! @version 0.1 April 2012
+    !!  \param[in] h: Input h parameter (see bianchi2 data type for explanation).
+    !!  \param[in] zE_in: Input zE parameter (see bianchi2 data type for explanation).
+    !!  \param[in] wH: Input wH parameter (see bianchi2 data type for explanation).
+    !!  \param[in] rhand: Logical to specify handedness of map.
+    !!  \param[in] nside: Nside of Healpix map to generate.
+    !!  \param[in] lmax: Maximum harmonic l to consider.
+    !!  \param[in] Nuse : Number of terms in use in the integrations IA and IB.
+    !!  \param[in] alpha: Alpha Euler angle of the rotation.
+    !!  \param[in] beta: Beta Euler angle of the rotation.
+    !!  \param[in] gamma: Gamma Euler angle of the rotation.
+    !!  \retval b Initialised bianchi2 object with simulated map calculated.
+    !!    
+    !!  \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
@@ -381,7 +378,7 @@ module bianchi2_sky_mod
 
       integer :: npix, ipix, fail
 
-      ! Parameters for computing alm
+      !> Parameters for computing alm.
       complex(s2_spc), allocatable :: alm(:,:)
       real(s2_dp) :: handedness_sign = +1d0, lsign = 1d0
       integer :: l, itheta
@@ -390,7 +387,7 @@ module bianchi2_sky_mod
       real(s2_dp) :: C_sin, C_cos
       real(s2_dp) :: IA, IB
       
-      ! Parameters for the rotation
+      !> Parameters for the rotation.
       real(s2_sp), intent(in), optional :: alpha, beta, gamma
       real(s2_sp), parameter :: ZERO_TOL = 1d-4
       real(s2_dp), pointer :: dl(:,:) => null()
@@ -399,16 +396,16 @@ module bianchi2_sky_mod
       complex(s2_dpc) :: Dm_p1, Dm_m1
       complex(s2_dpc) :: icmpx
 
-      ! Set icmpx=sqrt(-1)
+      !> Set icmpx=sqrt(-1).
       icmpx = cmplx(0d0,1d0)
 
-      ! Check object not already initialised.
+      !> Check object not already initialised.
       if(b%init) then
         call bianchi2_error(BIANCHI2_ERROR_INIT, 'bianchi2_sky_init')
         return
       end if
 
-      ! Initialise parameters passed as arguments.
+      !> Initialise parameters passed as arguments.
       b%omega_matter = omega_matter_in
       b%omega_lambda = omega_lambda_in
       b%h = h
@@ -416,7 +413,7 @@ module bianchi2_sky_mod
       b%wH = wH
       b%rhand = rhand
 
-      ! Initialise healpix alm settings.
+      !> Initialise healpix alm settings.
       allocate(alm(0:lmax,0:1), stat=fail)
       alm = cmplx(0d0, 0d0)
       if(fail /= 0) then
@@ -424,23 +421,20 @@ module bianchi2_sky_mod
           'bianchi2_sky_init_alm')
       end if
 
-
-      ! Set handedness sign.
+      !> Set handedness sign.
       if(b%rhand) then
          handedness_sign = 1d0
       else
          handedness_sign = -1d0
       end if
 
-      ! Set global data.
+      !> Set global data.
       b2gd_Bianchi_h = b%h
       b2gd_Omega_matter = b%omega_matter
       b2gd_Omega_Lambda = b%omega_lambda
       b2gd_ze = b%zE
-      b2gd_alpha = sqrt(b%h)
-      b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
 
-      ! Initialise other variables.
+      !> Initialise other variables.
       b2gd_alpha = sqrt(b%h)
       b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
       call get_tau(tau_needed)
@@ -448,7 +442,7 @@ module bianchi2_sky_mod
 
 
 
-      ! Calculate A(theta) and B(theta) terms
+      !> Calculate A(theta) and B(theta) terms.
       allocate(A_grid(0:Nuse-1), stat=fail)
       allocate(B_grid(0:Nuse-1), stat=fail)
 
@@ -531,29 +525,29 @@ module bianchi2_sky_mod
       end do
 
 
-      ! Compute alms.
+      !> Compute alms.
       lsign = +1d0
       do l=1, lmax
          
-         ! Invert lsign
+         !> Invert lsign.
          lsign=-lsign
 
-         ! Compute integrals.
+         !> Compute integrals.
          ! Use precomputed A(theta) and B(theta).
             IA = bianchi2_sky_comp_IX(l, Nuse, A_grid)
             IB = bianchi2_sky_comp_IX(l, Nuse, B_grid)
 
-         ! Compute alm for a given 1. Only m=1 is non-zero.
+         !> Compute alm for a given 1. Only m=1 is non-zero.
             alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
 
       end do
 
 !      write(*,'(a)') ' Percent complete: 100.0%'
  
-      ! Convert Delta_T/T alm computed to Delta_T alm.
+      !> Convert Delta_T/T alm computed to Delta_T alm.
       alm = BIANCHI2_CMB_T * alm
 
-      ! Rotate alms if Euler angles present and ar least one angle non-zero
+      !> Rotate alms if Euler angles present and ar least one angle non-zero.
       if(present(alpha) .and. present(beta) .and. present(gamma) &
            .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
 
@@ -570,17 +564,17 @@ module bianchi2_sky_mod
             call s2_dl_beta_operator(dl, real(beta,s2_dp), l)        
             do m = 0,l
 
-               !Calculation of  Dl,m,+-1
+               !> Calculation of  Dl,m,+-1.
                Dm_p1 = exp(-icmpx*m*alpha) * dl(m, 1) * exp(-icmpx*gamma)
                Dm_m1 = exp(-icmpx*m*alpha) * dl(m,-1) * exp( icmpx*gamma)
                
-               !Rotation of the alm
+               !> Rotation of the alm.
                alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
              
             end do
          end do  
 
-         ! Initialise sky object with alm_rotate.
+         !> Initialise sky object with alm_rotate.
          b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)    
 
          deallocate(alm_rotate)
@@ -590,16 +584,16 @@ module bianchi2_sky_mod
 
          write(*,'(a)') ' No rotation needed '
 
-         ! Initialise sky object with alm.
+         !> Initialise sky object with alm.
          b%sky = s2_sky_init(alm, lmax, 1, nside)
       endif
 
-      ! Set initialised status.
+      !> Set initialised status.
       b%init = .true.
 
       call bianchi2_sky_compute_map(b,nside)
 
-      ! Free memory.
+      !> Free memory.
       deallocate(alm)
       deallocate(A_grid)
       deallocate(B_grid)
@@ -611,31 +605,27 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_free
     !
-    !! Free all memory associated with a bianchi2 object.
+    !> Free all memory associated with a bianchi2 object.
     !!
     !! Variables:
-    !!  - b: Bianchi2 object to free.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!  \param[inout] b Bianchi2 object to free.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
 
     subroutine bianchi2_sky_free(b)
 
       type(bianchi2_sky), intent(inout) :: b
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_free')
       end if 
 
-      ! Free sky.
+      !> Free sky.
       call s2_sky_free(b%sky)
 
-      ! Reset attributes.
+      !> Reset attributes.
       b%omega_matter = 0.0d0
       b%omega_lambda = 0.0d0
       b%h = 0.0d0
@@ -650,18 +640,13 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_param_write
     !
-    !! Write parameters of the Bianchi2 simulation to standard output.
+    !> Write parameters of the Bianchi2 simulation to standard output.
     !!
     !! Variables:
-    !!  - b: Bianchi2 object containing parameter attributes to write.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!  \param[inout] b Bianchi2 object containing parameter attributes to write.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
-
     subroutine bianchi2_sky_param_write(b)
 
       type(bianchi2_sky), intent(in) :: b
@@ -679,32 +664,27 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_compute_map
     !
-    !! Compute the map of the bianchi2 sky, assuming the alms are already
+    !> Compute the map of the bianchi2 sky, assuming the alms are already
     !! defined.
     !!
     !! Variables:
-    !!  - b: Bianchi2 object containing alms to compute map of.
-    !!  - nside: Healpix nside to compute map at.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!  \param[inout] b Bianchi2 object containing alms to compute map of.
+    !!  \param[in] nside Healpix nside to compute map at.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
-
     subroutine bianchi2_sky_compute_map(b, nside)
 
       type(bianchi2_sky), intent(inout) :: b
       integer, intent(in) :: nside
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, &
           'bianchi2_sky_compute_map')
       end if
 
-      ! Compute bianchi2 sky alms.
+      !> Compute bianchi2 sky alms.
       call s2_sky_compute_map(b%sky, nside)
 
     end subroutine bianchi2_sky_compute_map
@@ -713,33 +693,28 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_compute_alm
     !
-    !! Compute the alm of the bianchi2 sky, assuming the map is already
+    !> Compute the alm of the bianchi2 sky, assuming the map is already
     !! defined.
     !!
     !! Variables:
-    !!  - b: Bianchi2 object containing sky to compute alms of.
-    !!  - lmax: Maximum harmonic l to consider when computing alms.
-    !!  - mmax: Maximum harmonic m to consider when computing alms.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!  \param[inout] b Bianchi2 object containing sky to compute alms of.
+    !!  \param[in] lmax Maximum harmonic l to consider when computing alms.
+    !!  \pram[in] mmax Maximum harmonic m to consider when computing alms.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a> 
     !--------------------------------------------------------------------------
-
     subroutine bianchi2_sky_compute_alm(b, lmax, mmax)
 
       type(bianchi2_sky), intent(inout) :: b
       integer, intent(in) :: lmax, mmax
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, &
           'bianchi2_sky_compute_alm')
       end if
 
-      ! Compute bianchi2 sky alms.
+      !> Compute bianchi2 sky alms.
       call s2_sky_compute_alm(b%sky, lmax, mmax)
 
     end subroutine bianchi2_sky_compute_alm
@@ -748,7 +723,7 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_get_sky
     !
-    !! Get sky variable from the passed bianchi2 object.
+    !> Get sky variable from the passed bianchi2 object.
     !!
     !! Notes:
     !!   - Initialises a new sky as a copy of the bianchi2 sky.
@@ -756,27 +731,22 @@ module bianchi2_sky_mod
     !!     herein and should be freed by the calling routine at some point.
     !!
     !! Variables:
-    !!   - b: Bianchi2 object containing sky to get.
-    !!   - sky: Object sky variable returned.
-    !
-    !! @author J. D. McEwen 
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!   \param[in] b Bianchi2 object containing sky to get.
+    !!   \retval sky Object sky variable returned.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
-
     function bianchi2_sky_get_sky(b) result(sky)
 
       type(bianchi2_sky), intent(in) :: b
       type(s2_sky) :: sky
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call s2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_get_sky')
       end if 
 
-      ! Make a copy for the returned sky.
+      !> Make a copy for the returned sky.
       sky = s2_sky_init(b%sky)
 
     end function bianchi2_sky_get_sky
@@ -785,35 +755,30 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_get_alm
     !
-    !! Get alms contained in a bianchi2 sky object.  Alms must already be
+    !> Get alms contained in a bianchi2 sky object.  Alms must already be
     !! computed.
     !!
     !! Notes:
     !!   - Error occurs if alms are not already computed.
     !!
     !! Variables:
-    !!   - b: Bianchi2 object containing sky that in turn contained the alms
+    !!   \param[in] b Bianchi2 object containing sky that in turn contained the alms
     !!     to get.
-    !!   - alm: Alms of simulated bianchi map extracted.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!   \retval alm Alms of simulated bianchi map extracted.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
-
     subroutine bianchi2_sky_get_alm(b, alm)
 
       type(bianchi2_sky), intent(in) :: b
       complex(s2_spc), intent(out) :: alm(:,:)
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_get_alm')
       end if 
 
-      ! Get alms from sky.
+      !> Get alms from sky.
       call s2_sky_get_alm(b%sky, alm)
 
     end subroutine bianchi2_sky_get_alm
@@ -822,25 +787,20 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_apply_beam
     !
-    !! Apply Gaussian beam with specified FWHM.  (FWHM must be passed in
+    !> Apply Gaussian beam with specified FWHM.  (FWHM must be passed in
     !! arcmin.)
     !!
     !! Notes:
     !!   - Error occurs if alms are not already computed.
     !!
     !! Variables:
-    !!   - b: Bianchi2 object containing sky that is to be comvolved with
+    !!   \param[inout] b Bianchi2 object containing sky that is to be comvolved with
     !!     the beam.
-    !!   - fwhm: Gaussian beam FWHM to use (specified in arcmin).
-    !!   - lmax: Maximum harmonic l to consider.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!   \param[in] fwhm Gaussian beam FWHM to use (specified in arcmin).
+    !!   \param[in] lmax Maximum harmonic l to consider.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
-
     subroutine bianchi2_sky_apply_beam(b, fwhm, lmax)
 
       use s2_pl_mod
@@ -853,16 +813,16 @@ module bianchi2_sky_mod
       real(s2_sp) :: fwhm_rad
       type(s2_pl) :: beam
 
-      ! Convert beam_fwhm to radians.
+      !> Convert beam_fwhm to radians.
       fwhm_rad = s2_vect_arcmin_to_rad(fwhm)
 
-      ! Create beam.
+      !> Create beam.
       beam = s2_pl_init_guassian(fwhm_rad, lmax)
 
-      ! Apply beam.
+      !> Apply beam.
       call s2_sky_conv(b%sky, beam)
 
-      ! Free beam.
+      !> Free beam.
       call s2_pl_free(beam)
 
     end subroutine bianchi2_sky_apply_beam
@@ -871,23 +831,18 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_write
     !
-    !! Write the bianchi2 simulated sky to a file. 
+    !> Write the bianchi2 simulated sky to a file. 
     !!
     !! Variables:
-    !!  - b: Bianchi2 object to save sky of.
-    !!  - filename: Name of output file.
-    !!  - file_type: Type of output file, either fits map or sky file 
+    !!  \param[inout] b Bianchi2 object to save sky of.
+    !!  \param[in] filename Name of output file.
+    !!  \param[in] file_type Type of output file, either fits map or sky file 
     !!    (see s2_sky_mod for more details).  Integer flag that may be 
     !!    either S2_SKY_FILE_TYPE_MAP or S2_SKY_FILE_TYPE_SKY.
-    !!  - [comment]: Optional comment to append to file header.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
+    !!  \param[in] [comment] Optional comment to append to file header.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
-
     subroutine bianchi2_sky_write(b, filename, file_type, comment)
 
       type(bianchi2_sky), intent(inout) :: b
@@ -895,7 +850,7 @@ module bianchi2_sky_mod
       integer, intent(in) :: file_type
       character(len=*), intent(in), optional :: comment
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_write')
       end if 
@@ -920,25 +875,19 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_rotate
     !
-    !! Rotate the simulated sky of the bianchi2 object.  
+    !> Rotate the simulated sky of the bianchi2 object.  
     !!
     !! Variables:
-    !!  - b: Bianchi2 object containing sky to be rotated.
-    !!  - alpha: Alpha Euler angle of the rotation.
-    !!  - beta: Beta Euler angle of the rotation.
-    !!  - gamma: Gamma Euler angle of the rotation.
-    !!  - lmax: Maximum harmonic l to consider.
-    !!  - nside: Healpix nside to compute map at.
-    !!  - rotation_alm : put .false. in bianchi2_sim.f90 if
-    !     one wants to perform the rotation pixel by pixel
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 October 2005
-    !
-    ! Revisions:
-    !   October 2005 - Written by Jason McEwen
-    !   April   2012 - Modifications by Thibaut Josset
-    !                  Added option to perform rotation in harmonic space.
+    !!  \param[inout] b Bianchi2 object containing sky to be rotated.
+    !!  \param[in] alpha Alpha Euler angle of the rotation.
+    !!  \param[in] beta Beta Euler angle of the rotation.
+    !!  \param[in] gamma Gamma Euler angle of the rotation.
+    !!  \param[in] lmax Maximum harmonic l to consider.
+    !!  \param[in] nside Healpix nside to compute map at.
+    !!  \param[in] rotation_alm Logical to specify the space used for the rotation.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
+    !! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
     !--------------------------------------------------------------------------
 
     subroutine bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,&
@@ -959,20 +908,21 @@ module bianchi2_sky_mod
       complex(s2_dpc) :: Dm_p1, Dm_m1
       real(s2_sp), parameter :: ZERO_TOL = 1d-4
       complex(s2_dpc) :: icmpx
-      !set icmpx=sqrt(-1)
+
+      !> Set icmpx=sqrt(-1).
       icmpx = cmplx(0d0,1d0)
 
-      ! Check object initialised.
+      !> Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_rotate')
       end if
       
 
-      ! Rotate if Euler angles present and at least one angle non-zero
+      !> Rotate if Euler angles present and at least one angle non-zero.
       if(present(alpha) .and. present(beta) .and. present(gamma) &
            .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
          
-         !Choose between rotation pixel by pixel or rotation of the alm
+         !> Rotation pixel by pixel or rotation of the alm.
          if (rotation_alm == .false.) then
 
             write(*,'(a)') ' Rotation pixel by pixel with s2_sky_rotate '
@@ -990,12 +940,12 @@ module bianchi2_sky_mod
             endif
             alm_rotate = 0e0
 
-            !get alm
+            !> Get alm.
             call bianchi2_sky_compute_alm(b,lmax,1)
             call bianchi2_sky_get_alm(b, alm)
 
-            ! perform rotation in harmonic space,&
-            ! noting Bianchi alms only non zero for m=+-1)
+            !> Perform rotation in harmonic space.
+            ! Noting Bianchi alms only non zero for m=+-1).
             do l = 1,lmax
 
                call s2_dl_beta_operator(dl, real(beta,s2_dp), l)
@@ -1003,26 +953,26 @@ module bianchi2_sky_mod
                do m = 0,l
 
 
-                  !Calculation of  Dl,m,+-1
+                  !> Calculation of  Dl,m,+-1.
                   Dm_p1 = exp(-icmpx*m*alpha) * dl(m, 1) * exp(-icmpx*gamma)
                   Dm_m1 = exp(-icmpx*m*alpha) * dl(m,-1) * exp( icmpx*gamma)
 
-                  !Rotation of the alm
+                  !> Rotation of the alm.
                   alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
              
                end do
 
             end do
            
-            !Make free b%sky
+            !> Make free b%sky.
             call s2_sky_free(b%sky)
 
-            ! Compute sky object with rotated alms
+            !> Compute sky object with rotated alms.
             b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)
            
             call bianchi2_sky_compute_map(b,nside)
 
-            ! Dellocate memory used for rotating alms
+            !> Dellocate memory used for rotating alms.
             deallocate(alm_rotate)
             deallocate(alm)
             deallocate(dl)
@@ -1043,13 +993,18 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! get_results
     !
-    !! This returns the values found at the end of the integral
-    !
-    !! @author A. N. Lasenby
-    !! @version 08/10/05
-    !
-    ! Revisions:
-    !   October 2005 - Incorporated into library by JDM
+    !> This returns the values found at the end of the integral
+    !!
+    !! Variables:
+    !!  \param[in] tstop_use
+    !!  \retval R_final
+    !!  \retval RH_final
+    !!  \retval cos_bit_final
+    !!  \retval sin_bit_final
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
+    !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+    !!          Anthony Lasenby</a>
     !--------------------------------------------------------------------------
 
     subroutine get_results(tstop_use, R_final, RH_final, &
@@ -1093,11 +1048,11 @@ module bianchi2_sky_mod
 
       t=tstart
 
-      ! Next bit sets up initial value for R
+      !> Next bit sets up initial value for R.
 
       vals(1)=1
 
-      !	Next bit sets up initial value for RH
+      !> Next bit sets up initial value for RH.
 
       vals(2)=b2gd_RH_start
 
@@ -1114,7 +1069,7 @@ module bianchi2_sky_mod
 
       call d02cjf(t,tend,neqn,vals,fcn,tol,relabs,out,d02cjw,warr,ifail)
 
-      ! Check success.
+      !> Check success.
       if((ifail/=0).and.(ifail/=1)) then
         call bianchi2_error(BIANCHI2_ERROR_SKY_NUM_FAIL, 'get_results', &
           comment_add='NAG routine d02cjf failed')
@@ -1138,12 +1093,15 @@ module bianchi2_sky_mod
 
     !--------------------------------------------------------------------------
     ! fcn
-    !
-    !! @author A. N. Lasenby
-    !! @version 08/10/05
-    !
-    ! Revisions:
-    !   October 2005 - Incorporated into library by JDM
+    !>
+    !!
+    !! Variables:
+    !!  \param[in] t
+    !!  \param[in] vars
+    !!  \retval ff
+    !!
+    !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+    !!          Anthony Lasenby</a>
     !--------------------------------------------------------------------------
 
     subroutine fcn(t,vars,ff)
@@ -1193,11 +1151,14 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! out
     !
-    !! @author A. N. Lasenby
-    !! @version 08/10/05
-    !
-    ! Revisions:
-    !   October 2005 - Incorporated into library by JDM
+    !>
+    !!
+    !! Variables:
+    !!  \param[inout] b
+    !!  \param[in] vals
+    !! 
+    !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+    !!          Anthony Lasenby</a>
     !--------------------------------------------------------------------------
 
     subroutine out(t,vals)
@@ -1230,11 +1191,13 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! get_tau
     !
-    !! @author A. N. Lasenby
-    !! @version 08/10/05
-    !
-    ! Revisions:
-    !   October 2005 - Incorporated into library by JDM
+    !>
+    !!
+    !! Variable:
+    !!  \retval tau_needed
+    !!
+    !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+    !!          Anthony Lasenby</a>
     !--------------------------------------------------------------------------
 
     subroutine get_tau(tau_needed)
@@ -1279,11 +1242,12 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! F1r
     !
-    !! @author A. N. Lasenby
-    !! @version 08/10/05
-    !
-    ! Revisions:
-    !   October 2005 - Incorporated into library by JDM
+    !>
+    !! Variable:
+    !!  \param[in] a
+    !!
+    !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
+    !!          Anthony Lasenby</a>
     !--------------------------------------------------------------------------
 
     function F1r(a)
@@ -1318,21 +1282,21 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! bianchi2_sky_comp_IX
     !
-    !! Compute IA and IB integrals required in Bianchi2 simulation.
+    !> Compute IA and IB integrals required in Bianchi2 simulation.
     !!
     !! Variables:
-    !!   - l: Harmonic l to compute IA_l or IB_l for.
-    !!   - Nuse : Number of terms in use in the integration.
-    !!   - X_grid : Contains the values A_grid(itheta) or B_grid(itheta).
-    !
-    !! @author T. Josset
-    !! @version 0.1 April 2012
+    !!   \param[in] l Harmonic l to compute IA_l or IB_l for.
+    !!   \param[in] Nuse Number of terms in use in the integration.
+    !!   \param[in] X_grid Contains the values A_grid(itheta) or B_grid(itheta).
+    !!   \retval IX Value of the integral.
+    !!
+    !! \authors <a href="thibaut.josset@ens-cachan.fr">Thibaut Josset</a>
     !--------------------------------------------------------------------------  
 
     function bianchi2_sky_comp_IX(l, Nuse, X_grid) result(IX)
 
       integer, intent(in) :: l, Nuse
-      real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B
+      real(s2_dp), intent(in) :: X_grid(0:) !> X = A or B.
       real(s2_dp) :: integrand, IX
 
       integer :: itheta
@@ -1364,7 +1328,7 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
     ! plgndr
     !
-    !! Computes the associated Legendre function for l and m.
+    !> Computes the associated Legendre function for l and m.
     !!  Adapted from numerical recipes 
     !!
     !! Notes:
@@ -1372,15 +1336,11 @@ module bianchi2_sky_mod
     !!     Computes the associated Legendre polynomial P_m^l(x).
     !!
     !! Variables:
-    !!   - l: Legendre function l parameter.
-    !!   - m: Legendre function m parameter.
-    !!   - x: Point to evaluate specified Legendre funtion at.
-    !
-    !! @author J. D. McEwen
-    !! @version 0.1 June 2005
-    !
-    ! Revisions:
-    !   June 2005 - Written by Jason McEwen
+    !!   \param[in] l Legendre function l parameter.
+    !!   \param[in] m Legendre function m parameter.
+    !!   \param[in] x Point to evaluate specified Legendre funtion at.
+    !!
+    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
 
     function plgndr(l,m,x)
@@ -1393,7 +1353,7 @@ module bianchi2_sky_mod
 
       if(m<0 .or. m>l .or. abs(x)>1d0) stop 'bad arguments in plgndr'
 
-      pmm=1.                     ! Compute Pmm.
+      pmm=1.                     !> Compute Pmm.
       if(m.gt.0) then
          somx2=sqrt((1.-x)*(1.+x))
          fact=1.
@@ -1405,10 +1365,10 @@ module bianchi2_sky_mod
       if(l.eq.m) then
          plgndr=pmm
       else
-         pmmp1=x*(2*m+1)*pmm      ! Compute Pm m+1.
+         pmmp1=x*(2*m+1)*pmm      !> Compute Pm m+1.
          if(l.eq.m+1) then
             plgndr=pmmp1
-         else                    ! Compute Pm  l , l > m+ 1.
+         else                    !> Compute Pm  l , l > m+ 1.
             do ll=m+2,l
                pll=(x*(2*ll-1)*pmmp1-(ll+m-1)*pmm)/(ll-m)
                pmm=pmmp1
