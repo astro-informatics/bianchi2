@@ -178,7 +178,9 @@ all:     lib prog
 
 lib:	 $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a 
 
-prog:    $(BIANCHI2BIN)/bianchi2_sim $(BIANCHI2BIN)/bianchi2_sim_looptest
+prog:    $(BIANCHI2BIN)/bianchi2_sim          \
+         $(BIANCHI2BIN)/bianchi2_sim_looptest \
+         $(BIANCHI2BIN)/bianchi2_about
 
 
 $(BIANCHI2INC)/%.o: $(BIANCHI2SRC)/%.f90
@@ -244,3 +246,6 @@ $(BIANCHI2BIN)/bianchi2_sim_looptest:   $(BIANCHI2INC)/bianchi2_sim_looptest.o
 	$(FC) -o $(BIANCHI2BIN)/bianchi2_sim_looptest $(BIANCHI2INC)/bianchi2_sim_looptest.o \
 	$(LDFLAGS) $(PPFLAGS)
 
+$(BIANCHI2ABOUT)/bianchi2_about.o: $(BIANCHI2PROG)/bianchi2_about.f90 lib
+	$(FC) -o $(BIANCHI2BIN)/bianchi2_about $(BIANCHI2INC)/bianchi2_about.o \
+	$(LDFLAGS) $(PPFLAGS)
