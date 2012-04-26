@@ -22,7 +22,7 @@ ifneq ($(USEPGPLOT),yes)
 endif
 
 OPT = $(OPTPGPLOT) $(OPTF95) -DWMAP5 \
-      -O3 -DS2_VERSION=\"BIANCHI2_1.0b2\" -DS2_BUILD=\"`svnversion -n .`\" 
+      -O3 -DBIANCHI2_VERSION=\"1.0b2\" -DBIANCHI2_BUILD=\"`svnversion -n .`\" 
 
 OPT = $(OPTPGPLOT) -DMILLIK 
 
