@@ -21,10 +21,8 @@ ifneq ($(USEPGPLOT),yes)
   OPTPGPLOT     = -DNO_PGPLOT
 endif
 
-OPT = $(OPTPGPLOT) $(OPTF95) -DWMAP5 \
+OPT = $(OPTPGPLOT) -DMILLIK \
       -O3 -DBIANCHI2_VERSION=\"1.0b2\" -DBIANCHI2_BUILD=\"`svnversion -n .`\" 
-
-OPT = $(OPTPGPLOT) -DMILLIK 
 
 ifeq ($(FC),nagfor)
   OPT += -Wc,-fno-common 
@@ -246,6 +244,7 @@ $(BIANCHI2BIN)/bianchi2_sim_looptest:   $(BIANCHI2INC)/bianchi2_sim_looptest.o
 	$(FC) -o $(BIANCHI2BIN)/bianchi2_sim_looptest $(BIANCHI2INC)/bianchi2_sim_looptest.o \
 	$(LDFLAGS) $(PPFLAGS)
 
-$(BIANCHI2ABOUT)/bianchi2_about.o: $(BIANCHI2PROG)/bianchi2_about.f90 lib
+$(BIANCHI2INC)/bianchi2_about.o: $(BIANCHI2PROG)/bianchi2_about.f90 lib
+$(BIANCHI2BIN)/bianchi2_about: 	 $(BIANCHI2INC)/bianchi2_about.o
 	$(FC) -o $(BIANCHI2BIN)/bianchi2_about $(BIANCHI2INC)/bianchi2_about.o \
 	$(LDFLAGS) $(PPFLAGS)

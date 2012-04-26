@@ -22,6 +22,8 @@ program bianchi2_about
   write(*,'(a)') "=========================================================="
   write(*,'(a)') "BIANCHI2 package to simulate bianchi-induced temperature variations"
   write(*,'(a)') "By Jason McEwen"
+  write(*,'(a)') "   Anthony Lasenby"
+  write(*,'(a)') "   Thibaut Josset"
 
   write(*,'(a)') "See www.jasonmcewen.org for more information."
   write(*,'(a)') "See LICENSE.txt for license details."
