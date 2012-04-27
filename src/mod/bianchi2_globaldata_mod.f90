@@ -23,20 +23,20 @@ module bianchi2_globaldata_mod
 
   real :: b2gd_treal(b2gd_ntmax)
   real :: b2gd_xreal(b2gd_ntmax)
-!> real, allocatable :: b2gd_treal(:)
-!> real, allocatable :: b2gd_xreal(:)
+! real, allocatable :: b2gd_treal(:)
+! real, allocatable :: b2gd_xreal(:)
 
   real(s2_dp) :: b2gd_Omega_matter
   real(s2_dp) :: b2gd_Omega_Lambda
   real(s2_dp) :: b2gd_alpha, b2gd_Bianchi_h
   real(s2_dp) :: b2gd_RH_start
   real(s2_dp) :: b2gd_ze
-  real(s2_dp) :: b2gd_theta_0, b2gd_phi_0     !> ANL's angle convention.
+  real(s2_dp) :: b2gd_theta_0, b2gd_phi_0     ! ANL's angle convention.
 
   real(s2_dp) :: b2gd_xarr(b2gd_nvars, b2gd_ntmax)
   real(s2_dp) :: b2gd_tarr(b2gd_ntmax)
-!> real(s2_dp), allocatable :: b2gd_tarr(:)
-!> real(s2_dp), allocatable :: b2gd_xarr(:, :)
+! real(s2_dp), allocatable :: b2gd_tarr(:)
+! real(s2_dp), allocatable :: b2gd_xarr(:, :)
 
   real(s2_dp) :: b2gd_tstop
   real(s2_dp) :: b2gd_deltat
