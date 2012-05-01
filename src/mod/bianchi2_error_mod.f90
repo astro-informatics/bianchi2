@@ -43,7 +43,7 @@ module bianchi2_error_mod
     BIANCHI2_ERROR_PLM1TABLE_THETA_INVALID = 9, &
     BIANCHI2_ERROR_PLM1TABLE_L_INVALID = 10
 
-  !> Each element of the error_comment array must have the same length, thus
+  ! Each element of the error_comment array must have the same length, thus
   ! space with trailing space characters.  When come to use trim to remove 
   ! trailing spaces.
   ! Comment associated with each error type.
@@ -147,7 +147,7 @@ module bianchi2_error_mod
 
       end if
 
-      !> Copy error comment if comment_out present.
+      ! Copy error comment if comment_out present.
       if(present(comment_out)) comment_out = error_comment(error_code+1)
 
       !---------------------------------------

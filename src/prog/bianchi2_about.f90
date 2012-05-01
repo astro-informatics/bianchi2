@@ -70,7 +70,7 @@ program bianchi2_about
      
         if(trim(opt) /= '-help') call getArgument(i+1,arg)
 
-        !> Read each argument in turn
+        ! Read each argument in turn
         select case (trim(opt))
   
           case ('-help')

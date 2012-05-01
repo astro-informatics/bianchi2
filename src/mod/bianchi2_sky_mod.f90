@@ -71,42 +71,42 @@ module bianchi2_sky_mod
   ! Global variables
   !---------------------------------------
 
-  !> CMB T to convert Delta_T / T map to just Delta_T map.
+  ! CMB T to convert Delta_T / T map to just Delta_T map.
 #ifdef MILLIK
-  !> Produce maps in units of mK.
+  ! Produce maps in units of mK.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 2.725d3
 #else
-  !> Produce Delta_T / T maps.
+  ! Produce Delta_T / T maps.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 1d0 
 #endif
-  !> Logical to disable the lookup table.
+  ! Logical to disable the lookup table.
   logical, parameter :: BIANCHI2_DISABLE_PLM1TABLE = .false.
 
   !---------------------------------------
   ! Data types
   !---------------------------------------
 
-  !> Bianchi 2 sky object that contains parameters and simulated sky.
+  ! Bianchi 2 sky object that contains parameters and simulated sky.
   type, public :: bianchi2_sky
      private
-     !> Initialisation status.
+     ! Initialisation status.
      logical :: init = .false.
-     !> Matter density (input parameter).
+     ! Matter density (input parameter).
      real(s2_dp) :: omega_matter = 0.0d0
-     !> Lambda density (input parameter).
+     ! Lambda density (input parameter).
      real(s2_dp) :: omega_lambda = 0.0d0
-     !> Bianchi h parameter that controls `spiralness' (related to 
-     !! characteristic wavelength over which basis vectors change 
-     !! orientation) (input parameter).
+     ! Bianchi h parameter that controls `spiralness' (related to 
+     ! characteristic wavelength over which basis vectors change 
+     ! orientation) (input parameter).
      real(s2_dp) :: h = 0.0d0
-     !> Red shift (input parameter).
+     ! Red shift (input parameter).
      real(s2_dp) :: zE = 0.0d0
-     !> wH: Normalised vorticity (normalised to Hubble constant) (input 
-     !! parameter).
+     ! wH: Normalised vorticity (normalised to Hubble constant) (input 
+     ! parameter).
      real(s2_dp) :: wH = 0.0d0
-     !> Logical specifying handedness of map (true=right).
+     ! Logical specifying handedness of map (true=right).
      logical :: rhand = .true.
-     !> Simulated map.
+     ! Simulated map.
      type(s2_sky) :: sky
   end type bianchi2_sky
 
@@ -182,7 +182,7 @@ module bianchi2_sky_mod
       b%wH = wH
       b%rhand = rhand
 
-      !> Initialise healpix map settings.
+      ! Initialise healpix map settings.
       npix = nside2npix(nside)
       allocate(map(0:npix-1), stat=fail)
       map = 0d0
@@ -214,7 +214,7 @@ module bianchi2_sky_mod
       b2gd_Omega_Lambda = b%omega_lambda
       b2gd_ze = b%zE
 
-      !> Initialise other variables.
+      ! Initialise other variables.
       nt_use = 3
       b2gd_alpha = sqrt(b%h)
       b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
@@ -222,11 +222,11 @@ module bianchi2_sky_mod
       tstop_use=-tau_needed
       Lambda = 3*b2gd_RH_start**2*b%omega_lambda
 
-      !> Set ring parameter values.
+      ! Set ring parameter values.
       nring = 4*nside - 1
       max_pix_per_ring = 4*nside
 
-      !> Allocate space for ring pixel indices.
+      ! Allocate space for ring pixel indices.
       allocate(ipixring(0:max_pix_per_ring-1), stat=fail)
       if(fail /= 0) then
          call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
@@ -234,9 +234,10 @@ module bianchi2_sky_mod
       end if
       ipixring = 0
 
-      !> Compute map value for each pixel in each ring.
+      ! Compute map value for each pixel in each ring.
       ! Do ring at a time since A and B functions of theta so once need
       ! to compute once for each ring.
+      
       do iring = 1, nring    !> Checked this and ring is indeed indexed from 1.
 
 !          if(mod(iring,nring/4) == 0) then
@@ -244,48 +245,48 @@ module bianchi2_sky_mod
 !                  iring/real(nring,s2_sp)*100e0, '%'
 !          end if
 
-         !> Get ring_pix in order to determine theta of ring.
+         ! Get ring_pix in order to determine theta of ring.
          call in_ring(nside, iring, PHI_CENTRE, PHI_DIFF, ipixring, &
               & npixring, nest=0) ! Ring scheme!!!!!!!!!
 
-         !> Calculate thetaOB for current ring.
+         ! Calculate thetaOB for current ring.
          call pix2ang_ring(nside, ipixring(0), thetaOB, phiOB)
 
-         !> Set photon theta angle from observation angle.
+         ! Set photon theta angle from observation angle.
          theta0 = PI - thetaOB
 
-         !> Set global data.
+         ! Set global data.
          ! (Compute theta_0 for ANL's convention.)
          b2gd_theta_0 = theta0 - pi/2d0
 
-         !> Compute terms for constant theta.
+         ! Compute terms for constant theta.
          call get_results(tstop_use,R_final,RH_final,cos_bit_final,sin_bit_final)
          fact = sqrt(9.D0*b2gd_alpha**2+1.D0)*sqrt(1.D0+b2gd_alpha**2)* &
                 sqrt(1.D0-b%omega_matter-b%omega_lambda)**3.D0/b2gd_alpha**3 &
                 /b%omega_matter/6.D0
          U10_req = b%wH/fact
 
-         !> Compute map valus for all pixels in current ring.
+         ! Compute map valus for all pixels in current ring.
          do ipix = 0,npixring-1
 
-            !> Calculate thetaOB for current ring.
+            ! Calculate thetaOB for current ring.
             call pix2ang_ring(nside, ipixring(ipix), thetaOB, phiOB)
 
-            !> Set photon phi angle from observation angle.
+            ! Set photon phi angle from observation angle.
             phi0 = phiOB - PI
 
-            !> Account for handedness 
+            ! Account for handedness 
             ! (also component outside loop to account for handedness).
             phi0 = phi0 * handedness_sign
 
-            !> Compute phi_0 for ANL's convention.
+            ! Compute phi_0 for ANL's convention.
             b2gd_phi_0 = phi0 + 3d0/4d0*pi
 
-            !> Get first contribution.
+            ! Get first contribution.
             Phi1 = U10_req/R_final*(sin_bit_final*sin(b2gd_phi_0)+cos_bit_final*cos(b2gd_phi_0))
             map(ipixring(ipix)) = -Phi1/(1+b2gd_ze)*2d0   ! JDM: Need factor 2 to make agree
 
-            !> Now get end contribution.
+            ! Now get end contribution.
             final_dens = (3d0*RH_final**2-Lambda*R_final**2-3d0*b2gd_alpha**2)/(R_final**2)
             t0 = 3.D0/final_dens/R_final**5*cos((b2gd_phi_0*b2gd_alpha-b2gd_alpha*tstop_use- &
                 dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0+exp(-2.D0*b2gd_alpha*tstop_use)- &
@@ -307,16 +308,16 @@ module bianchi2_sky_mod
 
 !       write(*,'(a)') ' Percent complete: 100.0%'
 
-      !> Account for handedness.
+      ! Account for handedness.
       map = handedness_sign * map
 
-      !> Convert Delta_T/T map computed to Delta_T map.
+      ! Convert Delta_T/T map computed to Delta_T map.
       map = BIANCHI2_CMB_T * map
 
-      !> Initialise sky object with map.
+      ! Initialise sky object with map.
       b%sky = s2_sky_init(real(map,s2_sp), nside, S2_SKY_RING)
 
-      !> Set initialised status.
+      ! Set initialised status.
       b%init = .true.
 
 !       ! Free global data.
@@ -325,7 +326,7 @@ module bianchi2_sky_mod
 !       deallocate(b2gd_tarr)
 !       deallocate(b2gd_xarr)
 
-      !> Free memory.
+      ! Free memory.
       deallocate(map)
       deallocate(ipixring)
 
@@ -377,7 +378,7 @@ module bianchi2_sky_mod
 
       integer :: npix, ipix, fail
 
-      !> Parameters for computing alm.
+      ! Parameters for computing alm.
       complex(s2_spc), allocatable :: alm(:,:)
       real(s2_dp) :: handedness_sign = +1d0, lsign = 1d0
       integer :: l, itheta
@@ -386,7 +387,7 @@ module bianchi2_sky_mod
       real(s2_dp) :: C_sin, C_cos
       real(s2_dp) :: IA, IB
       
-      !> Parameters for the rotation.
+      ! Parameters for the rotation.
       real(s2_sp), intent(in), optional :: alpha, beta, gamma
       real(s2_sp), parameter :: ZERO_TOL = 1d-4
       real(s2_dp), pointer :: dl(:,:) => null()
@@ -395,16 +396,16 @@ module bianchi2_sky_mod
       complex(s2_dpc) :: Dm_p1, Dm_m1
       complex(s2_dpc) :: icmpx
 
-      !> Set icmpx=sqrt(-1).
+      ! Set icmpx=sqrt(-1).
       icmpx = cmplx(0d0,1d0)
 
-      !> Check object not already initialised.
+      ! Check object not already initialised.
       if(b%init) then
         call bianchi2_error(BIANCHI2_ERROR_INIT, 'bianchi2_sky_init')
         return
       end if
 
-      !> Initialise parameters passed as arguments.
+      ! Initialise parameters passed as arguments.
       b%omega_matter = omega_matter_in
       b%omega_lambda = omega_lambda_in
       b%h = h
@@ -412,7 +413,7 @@ module bianchi2_sky_mod
       b%wH = wH
       b%rhand = rhand
 
-      !> Initialise healpix alm settings.
+      ! Initialise healpix alm settings.
       allocate(alm(0:lmax,0:1), stat=fail)
       alm = cmplx(0d0, 0d0)
       if(fail /= 0) then
@@ -420,20 +421,20 @@ module bianchi2_sky_mod
           'bianchi2_sky_init_alm')
       end if
 
-      !> Set handedness sign.
+      ! Set handedness sign.
       if(b%rhand) then
          handedness_sign = 1d0
       else
          handedness_sign = -1d0
       end if
 
-      !> Set global data.
+      ! Set global data.
       b2gd_Bianchi_h = b%h
       b2gd_Omega_matter = b%omega_matter
       b2gd_Omega_Lambda = b%omega_lambda
       b2gd_ze = b%zE
 
-      !> Initialise other variables.
+      ! Initialise other variables.
       b2gd_alpha = sqrt(b%h)
       b2gd_RH_start = sqrt(-b2gd_alpha**2/(b%omega_matter+b%omega_lambda-1d0))
       call get_tau(tau_needed)
@@ -441,7 +442,7 @@ module bianchi2_sky_mod
 
 
 
-      !> Calculate A(theta) and B(theta) terms.
+      ! Calculate A(theta) and B(theta) terms.
       allocate(A_grid(0:Nuse-1), stat=fail)
       allocate(B_grid(0:Nuse-1), stat=fail)
 
@@ -455,9 +456,16 @@ module bianchi2_sky_mod
       b2gd_theta_0 = -pi/2d0
       theta_inc = (pi - 0d0) / real(Nuse, s2_dp)
 
+!This does not work :
+!!$OMP PARALLEL &
+!!$OMP PRIVATE(itheta,b2gd_theta_0,R_final,RH_final,cos_bit_final,sin_bit_final,b2gd_RH_start,Lambda,final_dens,C_sin,C_cos,b2gd_nt,b2gd_deltat,b2gd_it,b2gd_tarr,b2gd_xarr) &
+!!$OMP SHARED(Nuse,fact,b2gd_alpha,U10_req,b2gd_ze,A_grid,B_grid,b2gd_tstop,b2gd_xreal,b2gd_treal,b2gd_Omega_Lambda,b2gd_Omega_matter)
 
+!!$OMP DO
       do itheta = 0, Nuse-1
 
+         b2gd_theta_0=-pi/2d0+itheta*theta_inc
+        
          call get_results(tstop_use,R_final,RH_final,cos_bit_final,sin_bit_final)
          fact = sqrt(9.D0*b2gd_alpha**2+1.D0)*sqrt(1.D0+b2gd_alpha**2)* &
                 sqrt(1.D0-b%omega_matter-b%omega_lambda)**3.D0/b2gd_alpha**3 &
@@ -518,35 +526,49 @@ module bianchi2_sky_mod
 
         A_grid(itheta) = (C_sin - C_cos) / 2d0
         B_grid(itheta) = (C_sin + C_cos) / 2d0
-      
-        b2gd_theta_0 = b2gd_theta_0 + theta_inc
 
       end do
+!!$OMP END DO
+!!$OMP END PARALLEL
 
 
-      !> Compute alms.
+      ! Compute alms.
+
       lsign = +1d0
+
+!$OMP PARALLEL &
+!$OMP PRIVATE(l,lsign,IA,IB) &
+!$OMP SHARED(lmax,alm)
+
+!$OMP DO SCHEDULE(static)
       do l=1, lmax
          
-         !> Invert lsign.
-         lsign=-lsign
+         ! Invert lsign.
+         if (l/2==l/2.d0) then
+            lsign=+1d0
+         else
+            lsign=-1d0
+         end if
 
-         !> Compute integrals.
+         ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
             IA = bianchi2_sky_comp_IX(l, Nuse, A_grid)
             IB = bianchi2_sky_comp_IX(l, Nuse, B_grid)
 
-         !> Compute alm for a given 1. Only m=1 is non-zero.
+         ! Compute alm for a given 1. Only m=1 is non-zero.
             alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
 
       end do
+!$OMP END DO
+!$OMP END PARALLEL
+
 
 !      write(*,'(a)') ' Percent complete: 100.0%'
  
-      !> Convert Delta_T/T alm computed to Delta_T alm.
+      ! Convert Delta_T/T alm computed to Delta_T alm.
       alm = BIANCHI2_CMB_T * alm
 
-      !> Rotate alms if Euler angles present and ar least one angle non-zero.
+      ! Rotate alms if Euler angles present and ar least one angle non-zero.
       if(present(alpha) .and. present(beta) .and. present(gamma) &
            .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
 
@@ -559,21 +581,33 @@ module bianchi2_sky_mod
          endif
          alm_rotate = (0d0,0d0)
 
+
          do l = 1, lmax
-            call s2_dl_beta_operator(dl, real(beta,s2_dp), l)        
+
+            call s2_dl_beta_operator(dl, real(beta,s2_dp), l)
+  
+!This is useless(even worse)..
+!  !$OMP PARALLEL &
+!  !$OMP PRIVATE(m,Dm_p1,Dm_m1) &
+!  !$OMP SHARED(l,alpha,gamma,alm_rotate,alm,icmpx)
+
+!  !$OMP DO
             do m = 0,l
 
-               !> Calculation of  Dl,m,+-1.
+               ! Calculation of  Dl,m,+-1.
                Dm_p1 = exp(-icmpx*m*alpha) * dl(m, 1) * exp(-icmpx*gamma)
                Dm_m1 = exp(-icmpx*m*alpha) * dl(m,-1) * exp( icmpx*gamma)
                
-               !> Rotation of the alm.
+               ! Rotation of the alm.
                alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
-             
+
             end do
+!  !$OMP END DO
+!  !$OMP END PARALLEL
          end do  
 
-         !> Initialise sky object with alm_rotate.
+
+         ! Initialise sky object with alm_rotate.
          b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)    
 
          deallocate(alm_rotate)
@@ -583,16 +617,16 @@ module bianchi2_sky_mod
 
          write(*,'(a)') ' No rotation needed '
 
-         !> Initialise sky object with alm.
+         ! Initialise sky object with alm.
          b%sky = s2_sky_init(alm, lmax, 1, nside)
       endif
 
-      !> Set initialised status.
+      ! Set initialised status.
       b%init = .true.
 
       call bianchi2_sky_compute_map(b,nside)
 
-      !> Free memory.
+      ! Free memory.
       deallocate(alm)
       deallocate(A_grid)
       deallocate(B_grid)
@@ -615,15 +649,15 @@ module bianchi2_sky_mod
 
       type(bianchi2_sky), intent(inout) :: b
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_free')
       end if 
 
-      !> Free sky.
+      ! Free sky.
       call s2_sky_free(b%sky)
 
-      !> Reset attributes.
+      ! Reset attributes.
       b%omega_matter = 0.0d0
       b%omega_lambda = 0.0d0
       b%h = 0.0d0
@@ -675,13 +709,13 @@ module bianchi2_sky_mod
       type(bianchi2_sky), intent(inout) :: b
       integer, intent(in) :: nside
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, &
           'bianchi2_sky_compute_map')
       end if
 
-      !> Compute bianchi2 sky alms.
+      ! Compute bianchi2 sky alms.
       call s2_sky_compute_map(b%sky, nside)
 
     end subroutine bianchi2_sky_compute_map
@@ -704,13 +738,13 @@ module bianchi2_sky_mod
       type(bianchi2_sky), intent(inout) :: b
       integer, intent(in) :: lmax, mmax
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, &
           'bianchi2_sky_compute_alm')
       end if
 
-      !> Compute bianchi2 sky alms.
+      ! Compute bianchi2 sky alms.
       call s2_sky_compute_alm(b%sky, lmax, mmax)
 
     end subroutine bianchi2_sky_compute_alm
@@ -735,12 +769,12 @@ module bianchi2_sky_mod
       type(bianchi2_sky), intent(in) :: b
       type(s2_sky) :: sky
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call s2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_get_sky')
       end if 
 
-      !> Make a copy for the returned sky.
+      ! Make a copy for the returned sky.
       sky = s2_sky_init(b%sky)
 
     end function bianchi2_sky_get_sky
@@ -765,12 +799,12 @@ module bianchi2_sky_mod
       type(bianchi2_sky), intent(in) :: b
       complex(s2_spc), intent(out) :: alm(:,:)
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_get_alm')
       end if 
 
-      !> Get alms from sky.
+      ! Get alms from sky.
       call s2_sky_get_alm(b%sky, alm)
 
     end subroutine bianchi2_sky_get_alm
@@ -803,16 +837,16 @@ module bianchi2_sky_mod
       real(s2_sp) :: fwhm_rad
       type(s2_pl) :: beam
 
-      !> Convert beam_fwhm to radians.
+      ! Convert beam_fwhm to radians.
       fwhm_rad = s2_vect_arcmin_to_rad(fwhm)
 
-      !> Create beam.
+      ! Create beam.
       beam = s2_pl_init_guassian(fwhm_rad, lmax)
 
-      !> Apply beam.
+      ! Apply beam.
       call s2_sky_conv(b%sky, beam)
 
-      !> Free beam.
+      ! Free beam.
       call s2_pl_free(beam)
 
     end subroutine bianchi2_sky_apply_beam
@@ -839,7 +873,7 @@ module bianchi2_sky_mod
       integer, intent(in) :: file_type
       character(len=*), intent(in), optional :: comment
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_write')
       end if 
@@ -897,20 +931,20 @@ module bianchi2_sky_mod
       real(s2_sp), parameter :: ZERO_TOL = 1d-4
       complex(s2_dpc) :: icmpx
 
-      !> Set icmpx=sqrt(-1).
+      ! Set icmpx=sqrt(-1).
       icmpx = cmplx(0d0,1d0)
 
-      !> Check object initialised.
+      ! Check object initialised.
       if(.not. b%init) then
         call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_rotate')
       end if
       
 
-      !> Rotate if Euler angles present and at least one angle non-zero.
+      ! Rotate if Euler angles present and at least one angle non-zero.
       if(present(alpha) .and. present(beta) .and. present(gamma) &
            .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
          
-         !> Rotation pixel by pixel or rotation of the alm.
+         ! Rotation pixel by pixel or rotation of the alm.
          if (rotation_alm == .false.) then
 
             write(*,'(a)') ' Rotation pixel by pixel with s2_sky_rotate '
@@ -928,11 +962,11 @@ module bianchi2_sky_mod
             endif
             alm_rotate = 0e0
 
-            !> Get alm.
+            ! Get alm.
             call bianchi2_sky_compute_alm(b,lmax,1)
             call bianchi2_sky_get_alm(b, alm)
 
-            !> Perform rotation in harmonic space.
+            ! Perform rotation in harmonic space.
             ! Noting Bianchi alms only non zero for m=+-1).
             do l = 1,lmax
 
@@ -941,26 +975,26 @@ module bianchi2_sky_mod
                do m = 0,l
 
 
-                  !> Calculation of  Dl,m,+-1.
+                  ! Calculation of  Dl,m,+-1.
                   Dm_p1 = exp(-icmpx*m*alpha) * dl(m, 1) * exp(-icmpx*gamma)
                   Dm_m1 = exp(-icmpx*m*alpha) * dl(m,-1) * exp( icmpx*gamma)
 
-                  !> Rotation of the alm.
+                  ! Rotation of the alm.
                   alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
              
                end do
 
             end do
            
-            !> Make free b%sky.
+            ! Make free b%sky.
             call s2_sky_free(b%sky)
 
-            !> Compute sky object with rotated alms.
+            ! Compute sky object with rotated alms.
             b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)
            
             call bianchi2_sky_compute_map(b,nside)
 
-            !> Dellocate memory used for rotating alms.
+            ! Dellocate memory used for rotating alms.
             deallocate(alm_rotate)
             deallocate(alm)
             deallocate(dl)
@@ -1015,7 +1049,7 @@ module bianchi2_sky_mod
 #ifdef NAGI8
       integer(kind=8) :: neqn,irelab,ifail
 #else
-      integer :: neqn,irelab,ifail
+      integer :: neqn,irelab,ifail=1
 #endif
 
       character(len=1) :: relabs
@@ -1035,11 +1069,11 @@ module bianchi2_sky_mod
 
       t=tstart
 
-      !> Next bit sets up initial value for R.
+      ! Next bit sets up initial value for R.
 
       vals(1)=1
 
-      !> Next bit sets up initial value for RH.
+      ! Next bit sets up initial value for RH.
 
       vals(2)=b2gd_RH_start
 
@@ -1056,7 +1090,7 @@ module bianchi2_sky_mod
 
       call d02cjf(t,tend,neqn,vals,fcn,tol,relabs,out,d02cjw,warr,ifail)
 
-      !> Check success.
+      ! Check success.
       if((ifail/=0).and.(ifail/=1)) then
         call bianchi2_error(BIANCHI2_ERROR_SKY_NUM_FAIL, 'get_results', &
           comment_add='NAG routine d02cjf failed')
@@ -1280,7 +1314,7 @@ module bianchi2_sky_mod
       use bianchi2_plm1table_mod
 
       integer, intent(in) :: l, Nuse
-      real(s2_dp), intent(in) :: X_grid(0:) !> X = A or B.
+      real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B.
       real(s2_dp) :: IX
       
       real(s2_dp) :: integrand, Plm1
@@ -1348,7 +1382,7 @@ module bianchi2_sky_mod
 
       if(m<0 .or. m>l .or. abs(x)>1d0) stop 'bad arguments in plgndr'
 
-      pmm=1.                     !> Compute Pmm.
+      pmm=1.                     ! Compute Pmm.
       if(m.gt.0) then
          somx2=sqrt((1.-x)*(1.+x))
          fact=1.
@@ -1360,10 +1394,10 @@ module bianchi2_sky_mod
       if(l.eq.m) then
          plgndr=pmm
       else
-         pmmp1=x*(2*m+1)*pmm      !> Compute Pm m+1.
+         pmmp1=x*(2*m+1)*pmm      ! Compute Pm m+1.
          if(l.eq.m+1) then
             plgndr=pmmp1
-         else                    !> Compute Pm  l , l > m+ 1.
+         else                    ! Compute Pm  l , l > m+ 1.
             do ll=m+2,l
                pll=(x*(2*ll-1)*pmmp1-(ll+m-1)*pmm)/(ll-m)
                pmm=pmmp1

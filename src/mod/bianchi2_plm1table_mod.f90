@@ -6469,18 +6469,18 @@ module bianchi2_plm1table_mod
           'bianchi2_plm1table_getval')
       end if
 
-      !> Get theta index corresponding to value of theta passed.
+      ! Get theta index corresponding to value of theta passed.
       itheta_dp = theta / pi * real(BIANCHI2_PLM1TABLE_NTHETA,s2_dp)
 
       itheta = nint(itheta_dp)
 
-      !> Check itheta is an integer (within error limits).
+      ! Check itheta is an integer (within error limits).
       if(abs(itheta_dp - itheta) > ZERO_TOL) then
         call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_THETA_INVALID, &
           'bianchi2_plm1table_getval')
       end if
  
-      !> Get required value from table.
+      ! Get required value from table.
       plm1_val = PLM1_TABLE(l,itheta)
 
     end function bianchi2_plm1table_getval
