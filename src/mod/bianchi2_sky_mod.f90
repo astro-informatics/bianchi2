@@ -35,6 +35,7 @@ module bianchi2_sky_mod
   use s2_sky_mod
   use s2_error_mod
   use bianchi2_error_mod
+  use omp_lib
 
   implicit none
 
@@ -440,8 +441,6 @@ module bianchi2_sky_mod
       call get_tau(tau_needed)
       tstop_use=-tau_needed    
 
-
-
       ! Calculate A(theta) and B(theta) terms.
       allocate(A_grid(0:Nuse-1), stat=fail)
       allocate(B_grid(0:Nuse-1), stat=fail)
@@ -457,11 +456,14 @@ module bianchi2_sky_mod
       theta_inc = (pi - 0d0) / real(Nuse, s2_dp)
 
 !This does not work :
-!!$OMP PARALLEL &
-!!$OMP PRIVATE(itheta,b2gd_theta_0,R_final,RH_final,cos_bit_final,sin_bit_final,b2gd_RH_start,Lambda,final_dens,C_sin,C_cos,b2gd_nt,b2gd_deltat,b2gd_it,b2gd_tarr,b2gd_xarr) &
-!!$OMP SHARED(Nuse,fact,b2gd_alpha,U10_req,b2gd_ze,A_grid,B_grid,b2gd_tstop,b2gd_xreal,b2gd_treal,b2gd_Omega_Lambda,b2gd_Omega_matter)
-
-!!$OMP DO
+      !!$OMP PARALLEL DEFAULT(none) &
+      !!$OMP PRIVATE(itheta,b2gd_theta_0,R_final,RH_final) &
+      !!$OMP PRIVATE(cos_bit_final,sin_bit_final,b2gd_RH_start) &
+      !!$OMP PRIVATE(Lambda,final_dens,C_sin,C_cos) &
+      !!$OMP PRIVATE(b2gd_nt,b2gd_deltat,b2gd_it,b2gd_tarr,b2gd_xarr) &
+      !!$OMP SHARED(tstop_use,theta_inc,Nuse,fact,b2gd_alpha,U10_req) &
+      !!$OMP SHARED(b2gd_ze,A_grid,B_grid,b2gd_tstop,b2gd_xreal,b2gd_treal,b2gd_Omega_Lambda,b2gd_Omega_matter) 
+      !!$OMP DO
       do itheta = 0, Nuse-1
 
          b2gd_theta_0=-pi/2d0+itheta*theta_inc
@@ -528,19 +530,15 @@ module bianchi2_sky_mod
         B_grid(itheta) = (C_sin + C_cos) / 2d0
 
       end do
-!!$OMP END DO
-!!$OMP END PARALLEL
-
+      !!$OMP END DO
+      !!$OMP END PARALLEL
 
       ! Compute alms.
-
       lsign = +1d0
-
-!$OMP PARALLEL &
-!$OMP PRIVATE(l,lsign,IA,IB) &
-!$OMP SHARED(lmax,alm)
-
-!$OMP DO SCHEDULE(static)
+      !$OMP PARALLEL DEFAULT(none) &
+      !$OMP PRIVATE(l,lsign,IA,IB) &
+      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign)
+      !$OMP DO SCHEDULE(static)
       do l=1, lmax
          
          ! Invert lsign.
@@ -552,16 +550,15 @@ module bianchi2_sky_mod
 
          ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
-            IA = bianchi2_sky_comp_IX(l, Nuse, A_grid)
-            IB = bianchi2_sky_comp_IX(l, Nuse, B_grid)
+         IA = bianchi2_sky_comp_IX(l, Nuse, A_grid)
+         IB = bianchi2_sky_comp_IX(l, Nuse, B_grid)
 
          ! Compute alm for a given 1. Only m=1 is non-zero.
-            alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
+         alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
 
       end do
-!$OMP END DO
-!$OMP END PARALLEL
-
+      !$OMP END DO
+      !$OMP END PARALLEL
 
 !      write(*,'(a)') ' Percent complete: 100.0%'
  
@@ -584,14 +581,12 @@ module bianchi2_sky_mod
 
          do l = 1, lmax
 
+            ! Computing the Wigner functions is the bottleneck for
+            ! computation time.  If necessary, we could optimise this
+            ! by precomputing dlmn(pi/2) and then using FFTs to
+            ! compute dlmn(beta).
             call s2_dl_beta_operator(dl, real(beta,s2_dp), l)
   
-!This is useless(even worse)..
-!  !$OMP PARALLEL &
-!  !$OMP PRIVATE(m,Dm_p1,Dm_m1) &
-!  !$OMP SHARED(l,alpha,gamma,alm_rotate,alm,icmpx)
-
-!  !$OMP DO
             do m = 0,l
 
                ! Calculation of  Dl,m,+-1.
@@ -602,10 +597,7 @@ module bianchi2_sky_mod
                alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
 
             end do
-!  !$OMP END DO
-!  !$OMP END PARALLEL
          end do  
-
 
          ! Initialise sky object with alm_rotate.
          b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)    
@@ -945,7 +937,7 @@ module bianchi2_sky_mod
            .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
          
          ! Rotation pixel by pixel or rotation of the alm.
-         if (rotation_alm == .false.) then
+         if (.not. rotation_alm) then
 
             write(*,'(a)') ' Rotation pixel by pixel with s2_sky_rotate '
             call s2_sky_rotate(b%sky, alpha, beta, gamma)

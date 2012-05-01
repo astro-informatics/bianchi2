@@ -342,7 +342,7 @@ program bianchi2_sim
 
 
   ! Initialise bianchi2 object.
-  if (harmonic_space == .true.) then
+  if (harmonic_space) then
      
      write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space...'
      b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &

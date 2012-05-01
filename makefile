@@ -1,5 +1,3 @@
-# Makefile for Bianchi2 library
-# Jason McEwen    
 
 
 # ======== OPTIONS ========
@@ -13,9 +11,6 @@ USEPGPLOT = no
 #FC      = nagfor
 FC      = ifort
 
-#FC      = gfortran
-#FC      = f95
-#FC      = g95
 
 ifneq ($(USEPGPLOT),yes)
   OPTPGPLOT     = -DNO_PGPLOT
@@ -29,9 +24,6 @@ ifeq ($(FC),nagfor)
 endif
 ifeq ($(FC),ifort)
   OPT += -fno-common -openmp
-endif
-ifeq ($(FC),gfortran)
-  OPT += -m64
 endif
 
 # NAG ifort Mac OS X libraries typically have 64 bit integers 
@@ -50,10 +42,6 @@ ifeq ($(FC),nagfor)
   PPFLAGS = -fpp $(OPT)
 else ifeq ($(FC),ifort)
   PPFLAGS = -fpp $(OPT)
-else ifeq ($(FC),g95)
-  PPFLAGS = -cpp $(OPT)
-else ifeq ($(FC),gfortran)
-  PPFLAGS = -cpp $(OPT)
 endif
 
 
@@ -121,8 +109,20 @@ CFITSIOLIBNM = cfitsio
 ifeq ($(FC),ifort)
   ifeq ($(UNAME), Darwin)	
     # Mac Air
-    NAGLIBFULL   = /opt/NAG/flmi623dcl/lib/libnag_nag.a \
+
+    # Dynamic link.
+#    NAGLIBFULL   = -i8 -I/opt/NAG/flmi623dcl/nag_interface_blocks \
+#                   /opt/NAG/flmi623dcl/lib/libnag_mkl.a \
+#                   -L/opt/NAG/flmi623dcl/mkl_intel64 \
+#                   /opt/NAG/flmi623dcl/mkl_intel64/libmkl_intel_ilp64.a \
+#                   -lmkl_intel_thread -lmkl_core -liomp5 -lpthread \
+#                   -framework IOKit -framework CoreFoundation
+
+    # Static link.
+    NAGLIBFULL   = -i8 -I/opt/NAG/flmi623dcl/nag_interface_blocks \
+                   /opt/NAG/flmi623dcl/lib/libnag_nag.a \
                    -framework IOKit -framework CoreFoundation
+
   else
     # Hypatia
     NAGLIBFULL   = /share/apps/NAG/fll6i23dcl/lib/libnag_nag.a
@@ -131,6 +131,7 @@ endif
 ifeq ($(FC),nagfor)
   # Mac Air
   NAGLIBFULL   = /opt/NAG/flmi622d9l/lib/libnag_nag.a
+
 endif
 
 PGPLOTLIB    = $(PROGDIR)/pgplot
@@ -158,7 +159,6 @@ LDFLAGS =  -L$(BIANCHI2LIB) -l$(BIANCHI2LIBNM) \
            -L$(CFITSIOLIB) -l$(CFITSIOLIBNM) \
            $(LDFLAGSPGPLOT)
 #           -L$(NAGLIB) -l$(NAGLIBNM) \
-
 
 # ======== OBJECT FILES TO MAKE ========
 
