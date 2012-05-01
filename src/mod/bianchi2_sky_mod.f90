@@ -456,14 +456,12 @@ module bianchi2_sky_mod
       theta_inc = (pi - 0d0) / real(Nuse, s2_dp)
 
 !This does not work :
-      !!$OMP PARALLEL DEFAULT(none) &
-      !!$OMP PRIVATE(itheta,b2gd_theta_0,R_final,RH_final) &
-      !!$OMP PRIVATE(cos_bit_final,sin_bit_final,b2gd_RH_start) &
-      !!$OMP PRIVATE(Lambda,final_dens,C_sin,C_cos) &
-      !!$OMP PRIVATE(b2gd_nt,b2gd_deltat,b2gd_it,b2gd_tarr,b2gd_xarr) &
-      !!$OMP SHARED(tstop_use,theta_inc,Nuse,fact,b2gd_alpha,U10_req) &
-      !!$OMP SHARED(b2gd_ze,A_grid,B_grid,b2gd_tstop,b2gd_xreal,b2gd_treal,b2gd_Omega_Lambda,b2gd_Omega_matter) 
-      !!$OMP DO
+!$OMP PARALLEL default(none), copyin(b2gd_it, b2gd_nt, b2_gd_treal,b2gd_xreal,b2gd_theta_0,b2gd_xarr,b2gd_tarrb2gd_RH_start,b2gd_deltat,b2gd_ze,b2gd_tstop,b2gd_alpha,b2gd_Omega_matter,b2gd_Omega_Lambda,b2gd_RH_start) &
+!$OMP PRIVATE(itheta,R_final,RH_final,cos_bit_final,sin_bit_final,Lambda,final_dens,C_sin,C_cos,theta_inc,tstop_use,fact,U10_req,b) &
+!$OMP SHARED(Nuse,A_grid,B_grid)
+
+
+!$OMP DO
       do itheta = 0, Nuse-1
 
          b2gd_theta_0=-pi/2d0+itheta*theta_inc
@@ -530,8 +528,8 @@ module bianchi2_sky_mod
         B_grid(itheta) = (C_sin + C_cos) / 2d0
 
       end do
-      !!$OMP END DO
-      !!$OMP END PARALLEL
+!$OMP END DO
+!$OMP END PARALLEL
 
       ! Compute alms.
       lsign = +1d0

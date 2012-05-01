@@ -41,4 +41,6 @@ module bianchi2_globaldata_mod
   real(s2_dp) :: b2gd_tstop
   real(s2_dp) :: b2gd_deltat
 
+!$OMP THREADPRIVATE(b2gd_it, b2gd_nt, b2_gd_treal,b2gd_xreal,b2gd_theta_0,b2gd_xarr,b2gd_tarrb2gd_RH_start,b2gd_deltat,b2gd_ze,b2gd_tstop,b2gd_alpha,b2gd_Omega_matter,b2gd_Omega_Lambda,b2gd_RH_start)
+
 end module bianchi2_globaldata_mod
