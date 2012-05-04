@@ -3,22 +3,16 @@ program write_plm1table
 implicit none
 
 
-integer, parameter :: LMAX= 2048, NTHETA=100
+integer, parameter :: LMAX= 1024, NTHETA=1000
 integer :: l, itheta
 real(SELECTED_REAL_KIND(12,200)) :: theta, plm1
 real(SELECTED_REAL_KIND(12,200)) :: plgndr
 
-character(len=50) ::file_name
-character(len=10) ::lmax_char
-
 !! PI definition.
   real(SELECTED_REAL_KIND(12,200)), parameter :: PI = 3.141592653589793238462643383279502884197
 
-write(lmax_char(0:9),"(i10)") LMAX
 
-file_name = 'table_LMAX_'//trim(adjustl(lmax_char))
-
-open(1,file=file_name)
+open(1,file='newtable.f90')
 
 do l=1, LMAX
 

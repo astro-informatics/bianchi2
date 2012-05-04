@@ -455,13 +455,10 @@ module bianchi2_sky_mod
       b2gd_theta_0 = -pi/2d0
       theta_inc = (pi - 0d0) / real(Nuse, s2_dp)
 
-!This does not work :
-!$OMP PARALLEL default(none), copyin(b2gd_it, b2gd_nt, b2_gd_treal,b2gd_xreal,b2gd_theta_0,b2gd_xarr,b2gd_tarrb2gd_RH_start,b2gd_deltat,b2gd_ze,b2gd_tstop,b2gd_alpha,b2gd_Omega_matter,b2gd_Omega_Lambda,b2gd_RH_start) &
-!$OMP PRIVATE(itheta,R_final,RH_final,cos_bit_final,sin_bit_final,Lambda,final_dens,C_sin,C_cos,theta_inc,tstop_use,fact,U10_req,b) &
-!$OMP SHARED(Nuse,A_grid,B_grid)
-
-
-!$OMP DO
+      !$OMP PARALLEL DEFAULT(none), COPYIN(b2gd_it, b2gd_nt, b2_gd_treal,b2gd_xreal,b2gd_theta_0,b2gd_xarr,b2gd_tarr) &
+      !$OMP FIRSTPRIVATE(itheta,R_final,RH_final,cos_bit_final,sin_bit_final,final_dens,C_sin,C_cos) &
+      !$OMP SHARED(Nuse,A_grid,B_grid,tstop_use,theta_inc,Lambda,fact,U10_req,b,b2gd_RH_start,b2gd_deltat,b2gd_ze,b2gd_tstop,b2gd_alpha,b2gd_Omega_matter,b2gd_Omega_Lambda)
+      !$OMP DO SCHEDULE (static)
       do itheta = 0, Nuse-1
 
          b2gd_theta_0=-pi/2d0+itheta*theta_inc
@@ -528,13 +525,14 @@ module bianchi2_sky_mod
         B_grid(itheta) = (C_sin + C_cos) / 2d0
 
       end do
-!$OMP END DO
-!$OMP END PARALLEL
+      !$OMP END DO
+      !$OMP END PARALLEL
 
       ! Compute alms.
       lsign = +1d0
+
       !$OMP PARALLEL DEFAULT(none) &
-      !$OMP PRIVATE(l,lsign,IA,IB) &
+      !$OMP FIRSTPRIVATE(l,lsign,IA,IB) &
       !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign)
       !$OMP DO SCHEDULE(static)
       do l=1, lmax
@@ -567,7 +565,7 @@ module bianchi2_sky_mod
       if(present(alpha) .and. present(beta) .and. present(gamma) &
            .and. (abs(alpha)+abs(beta)+abs(gamma) > ZERO_TOL) ) then
 
-         write(*,*) ' Rotation of the alm '
+!         write(*,*) ' Rotation of the alm '
          allocate(dl(-lmax:lmax,-lmax:lmax),stat=fail)
          allocate(alm_rotate(0:lmax,0:lmax), stat=fail)
          if(fail/=0) then
@@ -595,17 +593,16 @@ module bianchi2_sky_mod
                alm_rotate(l,m) = - Dm_m1*conjg(alm(l,1)) + Dm_p1*alm(l,1)
 
             end do
-         end do  
-
+         end do       
+         
          ! Initialise sky object with alm_rotate.
          b%sky = s2_sky_init(alm_rotate, lmax, lmax, nside)    
-
          deallocate(alm_rotate)
          deallocate(dl)
-
+         
       else
 
-         write(*,'(a)') ' No rotation needed '
+!         write(*,'(a)') ' No rotation needed '
 
          ! Initialise sky object with alm.
          b%sky = s2_sky_init(alm, lmax, 1, nside)
@@ -614,7 +611,8 @@ module bianchi2_sky_mod
       ! Set initialised status.
       b%init = .true.
 
-      call bianchi2_sky_compute_map(b,nside)
+ 
+ !     call bianchi2_sky_compute_map(b,nside)
 
       ! Free memory.
       deallocate(alm)
@@ -975,7 +973,7 @@ module bianchi2_sky_mod
                end do
 
             end do
-           
+        
             ! Make free b%sky.
             call s2_sky_free(b%sky)
 

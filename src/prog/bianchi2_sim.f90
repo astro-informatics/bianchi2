@@ -347,6 +347,7 @@ program bianchi2_sim
      write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space...'
      b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
           nside, lmax, Nuse, alpha, beta, gamma)
+     call bianchi2_sky_compute_map(b,nside)
      write(*,'(a)') 'Simulation complete'
      write(*,'(a)')
   
