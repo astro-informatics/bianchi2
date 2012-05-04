@@ -23,3 +23,6 @@ Nuse = 100
 
 filename_out = sky_bianchi2_h1.fits
 filetype  = map
+
+rescale_Cl = .true.
+filename_out_power_spectrum = Cl_bianchi2_h1.dat

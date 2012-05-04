@@ -45,17 +45,19 @@ program bianchi2_sim
   real(s2_sp), parameter :: FWHM_DEFAULT = 330d0
   logical, parameter :: RHAND_DEFAULT = .true.
   logical, parameter :: HARMONIC_SPACE_DEFAULT = .true.
+  logical, parameter :: RESCALE_CL_DEFAULT = .true.
   integer, parameter :: NUSE_DEFAULT = 100
   integer, parameter :: LMAX_DEFAULT = 64
   integer, parameter :: NSIDE_DEFAULT = 128
   character(len=*), parameter :: FILE_TYPE_MAP_STR = 'map'
   character(len=*), parameter :: FILE_TYPE_SKY_STR = 'sky'
 
-  character(len=S2_STRING_LEN) :: filename_out
+  character(len=S2_STRING_LEN) :: filename_out, filename_out_power_spectrum
   character(len=S2_STRING_LEN) :: filetype_str = FILE_TYPE_MAP_STR
   integer :: filetype = S2_SKY_FILE_TYPE_MAP
 
   type(bianchi2_sky) :: b
+  real(s2_sp), allocatable :: Cl(:)
   real(s2_dp) :: omega_matter, omega_lambda, h, zE, wH
   integer :: nside, lmax
   ! Default angles in degrees for user input, but converted to radians later.
@@ -63,13 +65,12 @@ program bianchi2_sim
   logical :: rhand = .true.
   logical :: apply_beam = .false.
   real(s2_sp) :: fwhm = FWHM_DEFAULT
-
   logical :: harmonic_space
   integer :: Nuse
-
   logical :: rotation_alm = .false. ! Choose true only for 
                                     ! simulation in real space but 
                                     ! rotation in harmonic space.
+  logical :: rescale_Cl
 
   ! Set default parameter values.
   filename_out = 'sky.fits'
@@ -332,6 +333,19 @@ program bianchi2_sim
 
   end select
 
+  ! Get rescale_Cl.
+  ! .true. -> l*(l+1)*Cl / (2*PI)
+  description = concatnl('', &
+       'Enter rescale_Cl (logical): ')
+  rescale_Cl = parse_lgt(handle, 'rescale_Cl', &
+       default=RESCALE_CL_DEFAULT, descr=description)
+
+  ! Get filename_out_power_spectrum.
+  description = concatnl('', &
+       'Enter filename_out_power_spectrum: ')
+  filename_out_power_spectrum = parse_string(handle, 'filename_out_power_spectrum', &
+       default=trim(filename_out_power_spectrum), descr=description)
+
 
   !---------------------------------------
   ! Run simulation and save sky
@@ -362,6 +376,8 @@ program bianchi2_sim
   
      ! Perform rotation
      call bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,rotation_alm)
+     ! Compute the alm (needed for Cl).
+     call bianchi2_sky_compute_alm(b,lmax,lmax)
 
   end if
 
@@ -381,6 +397,15 @@ program bianchi2_sim
   ! Save sky.
   call bianchi2_sky_write(b, filename_out, filetype)
   write(*,'(a,a)') 'Simulated map written to ', trim(filename_out)
+  write(*,'(a)')
+
+  ! Compute and write the power spectrum.
+  allocate(Cl(0:lmax))
+  call bianchi2_sky_compute_Cl(b,lmax,Cl)
+  call bianchi2_sky_write_Cl(Cl,lmax,rescale_Cl,filename_out_power_spectrum)
+  deallocate(Cl)
+  write(*,'(a,a)') 'Simulated power spectrum written to ', &
+                    trim(filename_out_power_spectrum)
   write(*,'(a)')
 
   ! Write bianchi2 simulation variables to standard output.

@@ -55,8 +55,10 @@ module bianchi2_sky_mod
     bianchi2_sky_param_write, &
     bianchi2_sky_compute_map, &
     bianchi2_sky_compute_alm, &
+    bianchi2_sky_compute_Cl, &
     bianchi2_sky_get_sky, &
     bianchi2_sky_get_alm, &
+    bianchi2_sky_write_Cl, &
     bianchi2_sky_apply_beam
 
 
@@ -739,6 +741,50 @@ module bianchi2_sky_mod
 
 
     !--------------------------------------------------------------------------
+    ! bianchi2_sky_compute_Cl
+    !
+    !> Compute the power spectrum Cl of a bianchi2 sky object.
+    !! Alms must already be computed.
+    !!
+    !!   \param[in] b Bianchi2 object containing sky
+    !!     that in turn contained the alms used to compute the power spectrum.
+    !!   \param[in] lmax Maximum harmonic l to consider to get the alms
+    !!     and to compute the power spectrum.
+    !!   \param[inout] Cl Power spectrum of simulated bianchi map.
+    !!
+    !! \authors Thibaut Josset
+    !--------------------------------------------------------------------------
+
+    subroutine bianchi2_sky_compute_Cl(b, lmax, Cl)
+      
+      type(bianchi2_sky), intent(in) :: b
+      integer, intent(in) :: lmax
+      real(s2_sp), dimension(0:lmax), intent(out) :: Cl
+
+      complex(s2_spc), dimension(0:lmax,0:lmax) :: alm
+      integer :: l,m
+
+      ! Check object initialised.
+      if(.not. b%init) then
+        call bianchi2_error(BIANCHI2_ERROR_NOT_INIT, 'bianchi2_sky_get_Cl')
+      end if 
+
+      ! Get alms from sky.
+      call s2_sky_get_alm(b%sky, alm)
+
+      ! Compute the Cls.
+      do l=0, lmax
+         Cl(l)=real(alm(l,0)*conjg(alm(l,0)))
+         do m=1, l
+            Cl(l)=Cl(l)+2*real(alm(l,m)*conjg(alm(l,m)))
+         end do
+         Cl(l)=Cl(l)/(2*l+1)
+      end do
+
+    end subroutine bianchi2_sky_compute_Cl
+
+
+    !--------------------------------------------------------------------------
     ! bianchi2_sky_get_sky
     !
     !> Get sky variable from the passed bianchi2 object.
@@ -881,6 +927,42 @@ module bianchi2_sky_mod
       end select
 
     end subroutine bianchi2_sky_write
+
+
+    !--------------------------------------------------------------------------
+    ! bianchi2_sky_write_Cl
+    !
+    !> Write the bianchi2 simulated power spectrum to a file. 
+    !!
+    !!  \param[inout] Cl Power spectrum to write.
+    !!  \param[in] lmax Maximum harmonic l to consider.
+    !!  \param[in] rescale_Cl Logical to specify the unit of the power spectrum
+    !!  \param[in] filename Filename Name of output file.
+    !!
+    !! \authors Thibaut Josset
+    !--------------------------------------------------------------------------
+    subroutine bianchi2_sky_write_Cl (Cl, lmax, rescale_Cl, filename)
+      
+      integer, intent(in) :: lmax
+      real(s2_sp), dimension(0:lmax), intent(inout) :: Cl
+      logical, intent(in) :: rescale_Cl
+      character(len=*), intent(in) :: filename
+
+      integer :: l
+
+      open(11,file=filename)
+      if (rescale_Cl) then
+         do l=0, lmax
+            write(11,*) l, Cl(l)*l*(l+1)/ (2d0*PI)
+         end do
+      else
+         do l=0, lmax
+            write(11,*) l, Cl(l)
+         end do
+      end if
+      close(11)
+
+    end subroutine bianchi2_sky_write_Cl
 
 
     !--------------------------------------------------------------------------
