@@ -1,35 +1,32 @@
 program write_plm1table
 
+use bianchi2_plm1table_mod
+use s2_types_mod
+
 implicit none
 
-
-integer, parameter :: LMAX= 1024, NTHETA=1000
 integer :: l, itheta
-real(SELECTED_REAL_KIND(12,200)) :: theta, plm1
-real(SELECTED_REAL_KIND(12,200)) :: plgndr
-
-!! PI definition.
-  real(SELECTED_REAL_KIND(12,200)), parameter :: PI = 3.141592653589793238462643383279502884197
+real(s2_dp) :: theta, plm1
+real(s2_dp) :: plgndr
 
 
-open(1,file='newtable.f90')
+open(10,file='plm1table.dat')
 
-do l=1, LMAX
+do l=1, BIANCHI2_PLM1TABLE_LMAX
 
-   do itheta=0, NTHETA-1
+   do itheta=0, BIANCHI2_PLM1TABLE_NTHETA-1
       
-      theta=itheta*PI/NTHETA
+      theta=itheta*pi/BINACHI2_PLM1TABLE_NTHETA
       plm1=plgndr(l,1,cos(theta))
-      write(1,*) 'data PLM1_TABLE(',l,',',itheta,') / ',plm1,'/'
+      write(10,*) 'data PLM1_TABLE(',l,',',itheta,') = ', plm1
 
    end do
 
 end do
 
-close(1)
+close(10)
 
 end program write_plm1table
-
 
 
 

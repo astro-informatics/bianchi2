@@ -83,7 +83,7 @@ module bianchi2_sky_mod
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 1d0 
 #endif
   ! Logical to disable the lookup table.
-  logical, parameter :: BIANCHI2_DISABLE_PLM1TABLE = .false.
+  logical, parameter :: BIANCHI2_DISABLE_PLM1TABLE = .true.
 
   !---------------------------------------
   ! Data types
@@ -347,16 +347,16 @@ module bianchi2_sky_mod
     !!    type for explanation).
     !!  \param[in] omega_lambda_in: Input omega_lambda parameter (see bianchi2 data
     !!    type for explanation).
-    !!  \param[in] h: Input h parameter (see bianchi2 data type for explanation).
-    !!  \param[in] zE_in: Input zE parameter (see bianchi2 data type for explanation).
-    !!  \param[in] wH: Input wH parameter (see bianchi2 data type for explanation).
-    !!  \param[in] rhand: Logical to specify handedness of map.
-    !!  \param[in] nside: Nside of Healpix map to generate.
-    !!  \param[in] lmax: Maximum harmonic l to consider.
-    !!  \param[in] Nuse : Number of terms in use in the integrations IA and IB.
-    !!  \param[in] alpha: Alpha Euler angle of the rotation.
-    !!  \param[in] beta: Beta Euler angle of the rotation.
-    !!  \param[in] gamma: Gamma Euler angle of the rotation.
+    !!  \param[in] h Input h parameter (see bianchi2 data type for explanation).
+    !!  \param[in] zE_in Input zE parameter (see bianchi2 data type for explanation).
+    !!  \param[in] wH Input wH parameter (see bianchi2 data type for explanation).
+    !!  \param[in] rhand Logical to specify handedness of map.
+    !!  \param[in] nside Nside of Healpix map to generate.
+    !!  \param[in] lmax Maximum harmonic l to consider.
+    !!  \param[in] Nuse  Number of terms in use in the integrations IA and IB.
+    !!  \param[in] alpha Alpha Euler angle of the rotation.
+    !!  \param[in] beta Beta Euler angle of the rotation.
+    !!  \param[in] gamma Gamma Euler angle of the rotation.
     !!  \retval b Initialised bianchi2 object with simulated map calculated.
     !!    
     !!  \authors Thibaut Josset
@@ -607,7 +607,7 @@ module bianchi2_sky_mod
 !         write(*,'(a)') ' No rotation needed '
 
          ! Initialise sky object with alm.
-         b%sky = s2_sky_init(alm, lmax, 1, nside)
+         b%sky = s2_sky_init(alm, lmax, lmax, nside)
       endif
 
       ! Set initialised status.
