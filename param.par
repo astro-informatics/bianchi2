@@ -26,3 +26,6 @@ filetype  = map
 
 rescale_Cl = .true.
 filename_out_power_spectrum = Cl_bianchi2_h1.dat
+
+write_LUT_plgndr = .false.
+read_LUT_plgndr  = .false.

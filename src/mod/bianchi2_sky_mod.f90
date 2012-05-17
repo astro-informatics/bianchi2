@@ -74,42 +74,40 @@ module bianchi2_sky_mod
   ! Global variables
   !---------------------------------------
 
-  ! CMB T to convert Delta_T / T map to just Delta_T map.
+  !> CMB T to convert Delta_T / T map to just Delta_T map.
 #ifdef MILLIK
-  ! Produce maps in units of mK.
+  !> Produce maps in units of mK.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 2.725d3
 #else
-  ! Produce Delta_T / T maps.
+  !> Produce Delta_T / T maps.
   real(s2_dp), parameter :: BIANCHI2_CMB_T = 1d0 
 #endif
-  ! Logical to disable the lookup table.
-  logical, parameter :: BIANCHI2_DISABLE_PLM1TABLE = .true.
 
   !---------------------------------------
   ! Data types
   !---------------------------------------
 
-  ! Bianchi 2 sky object that contains parameters and simulated sky.
+  !> Bianchi 2 sky object that contains parameters and simulated sky.
   type, public :: bianchi2_sky
      private
-     ! Initialisation status.
+     !> Initialisation status.
      logical :: init = .false.
-     ! Matter density (input parameter).
+     !> Matter density (input parameter).
      real(s2_dp) :: omega_matter = 0.0d0
-     ! Lambda density (input parameter).
+     !> Lambda density (input parameter).
      real(s2_dp) :: omega_lambda = 0.0d0
-     ! Bianchi h parameter that controls `spiralness' (related to 
+     !> Bianchi h parameter that controls `spiralness' (related to 
      ! characteristic wavelength over which basis vectors change 
      ! orientation) (input parameter).
      real(s2_dp) :: h = 0.0d0
-     ! Red shift (input parameter).
+     !> Red shift (input parameter).
      real(s2_dp) :: zE = 0.0d0
-     ! wH: Normalised vorticity (normalised to Hubble constant) (input 
+     !> wH: Normalised vorticity (normalised to Hubble constant) (input 
      ! parameter).
      real(s2_dp) :: wH = 0.0d0
-     ! Logical specifying handedness of map (true=right).
+     !> Logical specifying handedness of map (true=right).
      logical :: rhand = .true.
-     ! Simulated map.
+     !> Simulated map.
      type(s2_sky) :: sky
   end type bianchi2_sky
 
@@ -357,15 +355,17 @@ module bianchi2_sky_mod
     !!  \param[in] alpha Alpha Euler angle of the rotation.
     !!  \param[in] beta Beta Euler angle of the rotation.
     !!  \param[in] gamma Gamma Euler angle of the rotation.
+    !!  \param[in] read_LUT_plgndr Logical to specify whether use the Look-Up-Table.
     !!  \retval b Initialised bianchi2 object with simulated map calculated.
     !!    
     !!  \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
-         nside, lmax, Nuse, alpha, beta, gamma) result(b)
+         nside, lmax, Nuse, alpha, beta, gamma, read_LUT_plgndr) result(b)
 
       use bianchi2_globaldata_mod
+      use bianchi2_plm1table_mod
       use s2_dl_mod, only : s2_dl_beta_operator
 
       real(s2_dp), intent(in) :: omega_matter_in, omega_lambda_in, h, zE_in, wH
@@ -389,6 +389,8 @@ module bianchi2_sky_mod
       real(s2_dp) :: theta_inc
       real(s2_dp) :: C_sin, C_cos
       real(s2_dp) :: IA, IB
+      real(s2_dp), allocatable :: plgndr_table(:,:)
+      logical :: read_LUT_plgndr
       
       ! Parameters for the rotation.
       real(s2_sp), intent(in), optional :: alpha, beta, gamma
@@ -417,7 +419,7 @@ module bianchi2_sky_mod
       b%rhand = rhand
 
       ! Initialise healpix alm settings.
-      allocate(alm(0:lmax,0:1), stat=fail)
+      allocate(alm(0:lmax,0:lmax), stat=fail)
       alm = cmplx(0d0, 0d0)
       if(fail /= 0) then
         call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
@@ -531,11 +533,15 @@ module bianchi2_sky_mod
       !$OMP END PARALLEL
 
       ! Compute alms.
+      allocate(plgndr_table(1:lmax,0:Nuse-1))
+      if (read_LUT_plgndr==.true.) then
+         call bianchi2_plm1table_get_table(plgndr_table,lmax,Nuse)
+      end if
       lsign = +1d0
 
       !$OMP PARALLEL DEFAULT(none) &
       !$OMP FIRSTPRIVATE(l,lsign,IA,IB) &
-      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign)
+      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign,read_LUT_plgndr,plgndr_table)
       !$OMP DO SCHEDULE(static)
       do l=1, lmax
          
@@ -548,8 +554,8 @@ module bianchi2_sky_mod
 
          ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
-         IA = bianchi2_sky_comp_IX(l, Nuse, A_grid)
-         IB = bianchi2_sky_comp_IX(l, Nuse, B_grid)
+         IA = bianchi2_sky_comp_IX(l, lmax,Nuse, A_grid, read_LUT_plgndr,plgndr_table)
+         IB = bianchi2_sky_comp_IX(l, lmax,Nuse, B_grid, read_LUT_plgndr,plgndr_table)
 
          ! Compute alm for a given 1. Only m=1 is non-zero.
          alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
@@ -557,6 +563,7 @@ module bianchi2_sky_mod
       end do
       !$OMP END DO
       !$OMP END PARALLEL
+      deallocate(plgndr_table)
 
 !      write(*,'(a)') ' Percent complete: 100.0%'
  
@@ -1357,11 +1364,6 @@ module bianchi2_sky_mod
     end function F1r
 
 
-
-
-
-
-
     !--------------------------------------------------------------------------
     ! Bianchi integrals
     !--------------------------------------------------------------------------
@@ -1374,17 +1376,18 @@ module bianchi2_sky_mod
     !!   \param[in] l Harmonic l to compute IA_l or IB_l for.
     !!   \param[in] Nuse Number of terms in use in the integration.
     !!   \param[in] X_grid Contains the values A_grid(itheta) or B_grid(itheta).
+    !!   \param[in] plgndr_table Contains the values of the Legendre functions.
     !!   \retval IX Value of the integral.
     !!
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------  
 
-    function bianchi2_sky_comp_IX(l, Nuse, X_grid) result(IX)
+    function bianchi2_sky_comp_IX(l,lmax,Nuse, X_grid, read_LUT_plgndr,plgndr_table) result(IX)
 
-      use bianchi2_plm1table_mod
-
-      integer, intent(in) :: l, Nuse
+      integer, intent(in) :: l,lmax, Nuse
       real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B.
+      logical, intent(in) :: read_LUT_plgndr
+      real(s2_dp),dimension(1:lmax,0:Nuse), intent(in) ::plgndr_table
       real(s2_dp) :: IX
       
       real(s2_dp) :: integrand, Plm1
@@ -1396,29 +1399,22 @@ module bianchi2_sky_mod
       theta = 0d0
       dtheta = (pi - 0d0) / Real(Nuse, s2_dp)
       
-      do itheta = 0, Nuse-1
-         
-         if (l>0 .and. l<=BIANCHI2_PLM1TABLE_LMAX .and. &
-                Nuse == BIANCHI2_PLM1TABLE_NTHETA .and. &
-                .not. BIANCHI2_DISABLE_PLM1TABLE) then
-
-            Plm1 = bianchi2_plm1table_getval(l,theta)
-
+      ! Sum all the terms.
+      do itheta = 0, Nuse-1      
+         if (read_LUT_plgndr==.true.) then
+            Plm1 = plgndr_table(l,itheta) ! Takes the value in the matrix.
          else
-
-            Plm1 = plgndr(l, 1, cos(theta))
-
+            Plm1 = plgndr(l, 1, cos(theta)) ! Re-compute the value.
          end if
-
          integrand = sin(theta) * X_grid(itheta) * Plm1
          IX = IX + integrand*dtheta
          theta = theta + dtheta
-         
       end do
 
+      ! Compute the definitive integral.
       IX = IX * sqrt( (2d0*l+1d0) / real(4d0*pi*l*(l+1d0), s2_dp) ) 
-
       return
+
     end function bianchi2_sky_comp_IX
  
 
