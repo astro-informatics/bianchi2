@@ -259,7 +259,7 @@ module bianchi2_sky_mod
 
          ! Set global data.
          ! (Compute theta_0 for ANL's convention.)
-         b2gd_theta_0 = theta0 - pi/2d0
+         b2gd_theta_0 = theta0 - PI/2d0
 
          ! Compute terms for constant theta.
          call get_results(tstop_use,R_final,RH_final,cos_bit_final,sin_bit_final)
@@ -282,7 +282,7 @@ module bianchi2_sky_mod
             phi0 = phi0 * handedness_sign
 
             ! Compute phi_0 for ANL's convention.
-            b2gd_phi_0 = phi0 + 3d0/4d0*pi
+            b2gd_phi_0 = phi0 + 3d0/4d0*PI
 
             ! Get first contribution.
             Phi1 = U10_req/R_final*(sin_bit_final*sin(b2gd_phi_0)+cos_bit_final*cos(b2gd_phi_0))
@@ -291,13 +291,13 @@ module bianchi2_sky_mod
             ! Now get end contribution.
             final_dens = (3d0*RH_final**2-Lambda*R_final**2-3d0*b2gd_alpha**2)/(R_final**2)
             t0 = 3.D0/final_dens/R_final**5*cos((b2gd_phi_0*b2gd_alpha-b2gd_alpha*tstop_use- &
-                dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0+exp(-2.D0*b2gd_alpha*tstop_use)- &
-                exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0))/b2gd_alpha)* &
+                dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0+exp(-2.D0*b2gd_alpha*tstop_use)- &
+                exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0))/b2gd_alpha)* &
                 exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0)/(-1.D0-sin(b2gd_theta_0)+ &
                 exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0)-exp(2.D0*b2gd_alpha*tstop_use))*b2gd_alpha+ &
                 1.D0/final_dens/R_final**5*sin((b2gd_phi_0*b2gd_alpha-b2gd_alpha*tstop_use- &
-                dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0+exp(-2.D0*b2gd_alpha*tstop_use)- & 
-                exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0))/b2gd_alpha)* &
+                dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0+exp(-2.D0*b2gd_alpha*tstop_use)- & 
+                exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0))/b2gd_alpha)* &
                 exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0)/(-1.D0-sin(b2gd_theta_0)+ &
                 exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0)-exp(2.D0*b2gd_alpha*tstop_use))
             other_bit = U10_req*t0
@@ -356,17 +356,15 @@ module bianchi2_sky_mod
     !!  \param[in] alpha Alpha Euler angle of the rotation.
     !!  \param[in] beta Beta Euler angle of the rotation.
     !!  \param[in] gamma Gamma Euler angle of the rotation.
-    !!  \param[in] read_LUT Logical to specify whether use the Look-Up-Table.
     !!  \retval b Initialised bianchi2 object with simulated map calculated.
     !!    
     !!  \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
-         nside, lmax, Nuse, alpha, beta, gamma, read_LUT,filename_LUT) result(b)
+         nside, lmax, Nuse, alpha, beta, gamma) result(b)
 
       use bianchi2_globaldata_mod
-      use bianchi2_lut_mod
       use s2_dl_mod, only : s2_dl_beta_operator
 
       real(s2_dp), intent(in) :: omega_matter_in, omega_lambda_in, h, zE_in, wH
@@ -390,9 +388,6 @@ module bianchi2_sky_mod
       real(s2_dp) :: theta_inc
       real(s2_dp) :: C_sin, C_cos
       real(s2_dp) :: IA, IB
-      real(s2_dp), allocatable :: plgndr_table(:,:)
-      logical :: read_LUT
-      character(len=S2_STRING_LEN) :: filename_LUT
       
       ! Parameters for the rotation.
       real(s2_sp), intent(in), optional :: alpha, beta, gamma
@@ -458,8 +453,8 @@ module bianchi2_sky_mod
 
       A_grid = 0d0
       B_grid = 0d0
-      b2gd_theta_0 = -pi/2d0
-      theta_inc = (pi - 0d0) / real(Nuse, s2_dp)
+      b2gd_theta_0 = -PI/2d0
+      theta_inc = (PI - 0d0) / real(Nuse, s2_dp)
 
       !$OMP PARALLEL DEFAULT(none), COPYIN(b2gd_it, b2gd_nt, b2_gd_treal,b2gd_xreal,b2gd_theta_0,b2gd_xarr,b2gd_tarr) &
       !$OMP FIRSTPRIVATE(itheta,R_final,RH_final,cos_bit_final,sin_bit_final,final_dens,C_sin,C_cos) &
@@ -467,7 +462,7 @@ module bianchi2_sky_mod
       !$OMP DO SCHEDULE (static)
       do itheta = 0, Nuse-1
 
-         b2gd_theta_0=-pi/2d0+itheta*theta_inc
+         b2gd_theta_0=-PI/2d0+itheta*theta_inc
         
          call get_results(tstop_use,R_final,RH_final,cos_bit_final,sin_bit_final)
          fact = sqrt(9.D0*b2gd_alpha**2+1.D0)*sqrt(1.D0+b2gd_alpha**2)* &
@@ -478,7 +473,7 @@ module bianchi2_sky_mod
          final_dens = (3d0*RH_final**2-Lambda*R_final**2-3d0*b2gd_alpha**2)/(R_final**2)
 
         C_sin=-U10_req/(1+b2gd_ze)*2d0*( &
-                1/R_final*(sin_bit_final*cos(3d0/4d0*pi)-cos_bit_final*sin(3d0/4d0*pi)) &
+                1/R_final*(sin_bit_final*cos(3d0/4d0*PI)-cos_bit_final*sin(3d0/4d0*PI)) &
                 - 3.D0/final_dens/R_final**5 &
                   * exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
                   / (-1.D0-sin(b2gd_theta_0) &
@@ -486,24 +481,24 @@ module bianchi2_sky_mod
                      - exp(2.D0*b2gd_alpha*tstop_use)) &
                   * b2gd_alpha &
                   * sin((b2gd_alpha*tstop_use- &
-                          dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                          dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0 &
                               + exp(-2.D0*b2gd_alpha*tstop_use) &
-                              - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
-                         )/b2gd_alpha+3d0/4d0*pi) &
+                              - exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                         )/b2gd_alpha+3d0/4d0*PI) &
                + 1.D0/final_dens/R_final**5 &
                  *  exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
                  / (-1.D0-sin(b2gd_theta_0) &
                     + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
                     -exp(2.D0*b2gd_alpha*tstop_use)) &
                  * cos((-b2gd_alpha*tstop_use- &
-                        dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                        dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0 &
                             + exp(-2.D0*b2gd_alpha*tstop_use) &
-                            - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
-                       )/b2gd_alpha+3d0/4d0*pi) &
+                            - exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                       )/b2gd_alpha+3d0/4d0*PI) &
                )
 
         C_cos=-U10_req/(1+b2gd_ze)*2d0*( &
-                1/R_final*(sin_bit_final*sin(3d0/4d0*pi)+cos_bit_final*cos(3d0/4d0*pi)) &
+                1/R_final*(sin_bit_final*sin(3d0/4d0*PI)+cos_bit_final*cos(3d0/4d0*PI)) &
                 + 3.D0/final_dens/R_final**5 &
                   * exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
                   / (-1.D0-sin(b2gd_theta_0) &
@@ -511,20 +506,20 @@ module bianchi2_sky_mod
                      - exp(2.D0*b2gd_alpha*tstop_use)) &
                   * b2gd_alpha &
                   * cos((b2gd_alpha*tstop_use- &
-                          dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                          dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0 &
                               + exp(-2.D0*b2gd_alpha*tstop_use) &
-                              - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
-                         )/b2gd_alpha+3d0/4d0*pi) &
+                              - exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                         )/b2gd_alpha+3d0/4d0*PI) &
                + 1.D0/final_dens/R_final**5 &
                  *  exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
                  / (-1.D0-sin(b2gd_theta_0) &
                     + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
                     -exp(2.D0*b2gd_alpha*tstop_use)) &
                  * sin((-b2gd_alpha*tstop_use- &
-                         dlog(cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0 &
+                         dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0 &
                             + exp(-2.D0*b2gd_alpha*tstop_use) &
-                            - exp(-2.D0*b2gd_alpha*tstop_use)*cos(pi/4.D0+b2gd_theta_0/2.D0)**2.D0) &
-                       )/b2gd_alpha+3d0/4d0*pi) &
+                            - exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0) &
+                       )/b2gd_alpha+3d0/4d0*PI) &
                )
 
         A_grid(itheta) = (C_sin - C_cos) / 2d0
@@ -535,15 +530,11 @@ module bianchi2_sky_mod
       !$OMP END PARALLEL
 
       ! Compute alms.
-      allocate(plgndr_table(1:lmax,0:Nuse-1))
-      if (read_LUT==.true.) then
-         call bianchi2_lut_get_table(plgndr_table,lmax,Nuse,filename_LUT)
-      end if
       lsign = +1d0
 
       !$OMP PARALLEL DEFAULT(none) &
       !$OMP FIRSTPRIVATE(l,lsign,IA,IB) &
-      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign,read_LUT,plgndr_table)
+      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid,handedness_sign,lut)
       !$OMP DO SCHEDULE(static)
       do l=1, lmax
          
@@ -556,16 +547,15 @@ module bianchi2_sky_mod
 
          ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
-         IA = bianchi2_sky_comp_IX(l, lmax,Nuse, A_grid, read_LUT,plgndr_table)
-         IB = bianchi2_sky_comp_IX(l, lmax,Nuse, B_grid, read_LUT,plgndr_table)
+         IA = bianchi2_sky_comp_IX(l,lmax,Nuse,A_grid)
+         IB = bianchi2_sky_comp_IX(l,lmax,Nuse,B_grid)
 
          ! Compute alm for a given 1. Only m=1 is non-zero.
-         alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
+         alm(l,1) = -lsign * PI * cmplx(- handedness_sign * (IB - IA), (IA + IB))
 
       end do
       !$OMP END DO
       !$OMP END PARALLEL
-      deallocate(plgndr_table)
 
 !      write(*,'(a)') ' Percent complete: 100.0%'
  
@@ -683,7 +673,7 @@ module bianchi2_sky_mod
       type(bianchi2_sky), intent(in) :: b
 
       write(*,'(a,e12.5)') ' b%omega_matter: ', b%omega_matter
-      write(*,'(a,e12.5)') ' b%omega_lmabda: ', b%omega_lambda
+      write(*,'(a,e12.5)') ' b%omega_lambda: ', b%omega_lambda
       write(*,'(a,e23.5)') ' b%h: ', b%h
       write(*,'(a,e22.5)') ' b%zE: ', b%zE
       write(*,'(a,e22.5)') ' b%wH: ', b%wH
@@ -1283,7 +1273,7 @@ module bianchi2_sky_mod
       t=b2gd_tstop-b2gd_it*b2gd_deltat
       b2gd_it=b2gd_it-1
 
-    end subroutine out
+   end subroutine out
 
 
     !--------------------------------------------------------------------------
@@ -1378,18 +1368,15 @@ module bianchi2_sky_mod
     !!   \param[in] l Harmonic l to compute IA_l or IB_l for.
     !!   \param[in] Nuse Number of terms in use in the integration.
     !!   \param[in] X_grid Contains the values A_grid(itheta) or B_grid(itheta).
-    !!   \param[in] plgndr_table Contains the values of the Legendre functions.
     !!   \retval IX Value of the integral.
     !!
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------  
 
-    function bianchi2_sky_comp_IX(l,lmax,Nuse, X_grid, read_LUT,plgndr_table) result(IX)
+    function bianchi2_sky_comp_IX(l,lmax,Nuse, X_grid) result(IX)
 
       integer, intent(in) :: l,lmax, Nuse
       real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B.
-      logical, intent(in) :: read_LUT
-      real(s2_dp),dimension(1:lmax,0:Nuse), intent(in) ::plgndr_table
       real(s2_dp) :: IX
       
       real(s2_dp) :: integrand, Plm1
@@ -1399,13 +1386,13 @@ module bianchi2_sky_mod
 
       IX = 0d0
       theta = 0d0
-      dtheta = (pi - 0d0) / Real(Nuse, s2_dp)
+      dtheta = (PI - 0d0) / Real(Nuse, s2_dp)
       
       ! Compute the sum of all the terms.
-      if (read_LUT==.true.) then
+      if (lut%read_LUT==.true.) then
 
          do itheta = 0, Nuse-1      
-            Plm1 = plgndr_table(l,itheta) ! Take the value in the matrix.
+            Plm1 = lut%plgndr_table(l,itheta) ! Take the value in the matrix.
             integrand = sin(theta) * X_grid(itheta) * Plm1
             IX = IX + integrand*dtheta
             theta = theta + dtheta
@@ -1423,7 +1410,7 @@ module bianchi2_sky_mod
       end if
 
       ! Compute the definitive integral.
-      IX = IX * sqrt( (2d0*l+1d0) / real(4d0*pi*l*(l+1d0), s2_dp) ) 
+      IX = IX * sqrt( (2d0*l+1d0) / real(4d0*PI*l*(l+1d0), s2_dp) ) 
       return
 
     end function bianchi2_sky_comp_IX

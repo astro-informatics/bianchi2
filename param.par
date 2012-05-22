@@ -28,4 +28,4 @@ rescale_Cl = .true.
 filename_out_power_spectrum = Cl_bianchi2_h1.dat
 
 read_LUT = .false.
-filename_LUT = table
+filename_LUT = no_table

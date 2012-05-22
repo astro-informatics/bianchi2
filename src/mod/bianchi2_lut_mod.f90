@@ -13,8 +13,6 @@ module bianchi2_lut_mod
 
   use s2_types_mod
   use bianchi2_error_mod
-  use paramfile_io, only: paramfile_handle, parse_init, parse_int, &
-    parse_real, parse_double, parse_lgt, parse_string, concatnl
 
   implicit none
 
@@ -24,13 +22,58 @@ module bianchi2_lut_mod
   ! Subroutine and function scope
   !---------------------------------------
 
-  public :: bianchi2_lut_write, &
-            bianchi2_lut_check_sizes, &
+  public :: bianchi2_lut_init, &
+            bianchi2_lut_write, &
             bianchi2_lut_get_table, &
             bianchi2_lut_plgndr
 
+  !---------------------------------------
+  ! Data types
+  !---------------------------------------
+  type, public :: bianchi2_lut
+     !> Maximal spherical harmonic to consider.
+     integer :: lmax_LUT
+     !> Number of points for theta.
+     integer :: Nuse_LUT
+     !> Contains the values of the Legendre functions.
+     real(s2_dp), dimension(:,:), allocatable, public :: plgndr_table
+     !> Logical to read the LUT.
+     logical :: read_LUT
+     !> Filename of the LUT.
+     character(len=S2_STRING_LEN) :: filename_LUT
+  end type bianchi2_lut
+
+  !--------------------------------------
+  ! Global Data
+  !--------------------------------------
+  !> Global data lut.
+  type(bianchi2_lut), public :: lut
+
+!----------------------------------------------------------------------
 
   contains
+
+    !-------------------------------------------------------------------------
+    ! bianchi2_lut_init
+    !
+    !> Initalizes the variable lut (except plgndr_table).
+    !!
+    !!   \param[in] read_LUT Logical to read the look_up_table.
+    !!   \param[in] filename_LUT File containing the LUT.
+    !!
+    !! \authors Thibaut Josset
+    !-------------------------------------------------------------------------
+    subroutine bianchi2_lut_init(read_LUT,filename_LUT)
+      
+      logical :: read_LUT
+      character(len=S2_STRING_LEN) :: filename_LUT
+
+      lut%lmax_LUT = 0
+      lut%Nuse_LUT = 0
+      lut%read_LUT = read_LUT
+      lut%filename_LUT = filename_LUT
+
+    end subroutine bianchi2_lut_init
 
     !-------------------------------------------------------------------------
     ! bianchi2_lut_write
@@ -41,7 +84,7 @@ module bianchi2_lut_mod
     !!   \param[in] lmax Maximum spherical harmonic l to consider.
     !!   \param[in] Nuse Number of terms used to compute IA and IB.
     !!                   (cf. Bianchi2_sky_mod)
-    !!   \paramn[in] filename_LUT File to write the LUT.
+    !!   \paramn[in] filename_LUT File containing the LUT.
     !!
     !! \authors Thibaut Josset
     !-------------------------------------------------------------------------
@@ -51,117 +94,76 @@ module bianchi2_lut_mod
       character(len=S2_STRING_LEN) :: filename_LUT
 
       integer :: l, itheta
-      real(s2_dp) :: theta, plm1
+      real(s2_dp) :: theta,dtheta,plm1
 
-      ! Write the sizes of the table in an independant file (easier to read).
-      open(10,file=trim(filename_LUT)//'_sizes.dat')
-      write(10,*) 'BIANCHI2_PLM1TABLE_LMAX =', LMAX
-      write(10,*) 'BIANCHI2_PLM1TABLE_NUSE =', Nuse
-      close(10)
-     
+      open(10,file=trim(filename_LUT),form='unformatted',&
+           status='replace',action='write')
+
+      ! Write the sizes of the table.
+      write(10) lmax
+      write(10) Nuse
+
       ! Write the data.
-      open(10,file=trim(filename_LUT)//'.dat')
+      dtheta = (PI - 0d0) / Real(Nuse, s2_dp)
       do l=1, lmax
+         theta = 0d0
          do itheta=0, Nuse-1
-            theta=itheta*PI/Nuse
-            ! Comput the data with plgndr.
+            ! Compute the data with plgndr.
             plm1=bianchi2_lut_plgndr(l,1,cos(theta))
-            write(10,*) plm1
+            write(10) plm1
+            theta = theta + dtheta
          end do
       end do
+
       close(10)
 
     end subroutine bianchi2_lut_write
 
-
-    !----------------------------------------------------------------------
-    ! bianchi2_lut_check_sizes
-    !
-    !> Checks the sizes of the table before read it.
-    !!
-    !!   \param[in] lmax Maximum spherical harmonic l to consider.
-    !!   \param[in] Nuse Number of terms used to compute IA and IB.
-    !!   \param[inout] read_LUT_plgndr Logical to say whether
-    !!                 the LUT should be used and whether it is readable.
-    !!   \param[in] filename_LUT File to read the LUT.
-    !!
-    !! \authors Thibaut Josset
-    !----------------------------------------------------------------------
-    subroutine bianchi2_lut_check_sizes(lmax,Nuse,read_LUT,filename_LUT)
-      
-      integer, intent(in) :: lmax, Nuse
-      logical, intent(inout) :: read_LUT
-      character(len=S2_STRING_LEN) :: filename_LUT
-
-      type(paramfile_handle) :: handle
-
-      integer :: BIANCHI2_PLM1TABLE_LMAX, BIANCHI2_PLM1TABLE_NUSE
-
-      if (read_LUT==.true.) then
-
-         handle = parse_init(trim(filename_LUT)//'_sizes.dat')
-
-         ! Get BIANCHI2_PLM1TABLE_LMAX
-         BIANCHI2_PLM1TABLE_LMAX = parse_int(handle, 'BIANCHI2_PLM1TABLE_LMAX', &
-              default=-1)
-         ! Check lmax in a valid range.
-         if(lmax .ne. BIANCHI2_PLM1TABLE_LMAX) then
-            call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_L_INVALID, &
-                 'bianchi2_plm1table_getval')
-            read_LUT=.false. ! Continue without using the table.
-         end if
-
-         ! Get BIANCHI2_PLM1TABLE_NUSE
-         BIANCHI2_PLM1TABLE_NUSE = parse_int(handle, 'BIANCHI2_PLM1TABLE_NUSE', &
-              default=-1)
-         ! Check Nuse in a valid range.
-         if(Nuse .ne. BIANCHI2_PLM1TABLE_NUSE) then
-            call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_THETA_INVALID, &
-                 'bianchi2_plm1table_getval')
-            read_LUT=.false. ! Continue without using the table.
-         end if
-
-      end if
-
-    end subroutine bianchi2_lut_check_sizes
-
-
-    !-----------------------------------------------------------------------------
+    !-------------------------------------------------------------------------
     ! bianchi2_lut_get_table
     !
     !> Gets all the data in a matrix.
     !!
     !!   \param[in] lmax Maximum spherical harmonic l to consider.
     !!   \param[in] Nuse Number of terms used to compute IA and IB.
-    !!   \param[inout] plgndr_table Contains the values of the Legendre functions.
-    !!   \param[in] filename_LUT File to read the LUT.
     !!
     !! \authors Thibaut Josset
-    !-----------------------------------------------------------------------------
-    subroutine bianchi2_lut_get_table(plgndr_table,lmax,Nuse,filename_LUT)
+    !-------------------------------------------------------------------------
+    subroutine bianchi2_lut_get_table(lmax,Nuse)
 
-      integer, intent(in) :: lmax, Nuse
-      real(s2_dp), dimension(1:lmax, 0:Nuse-1), intent(inout) :: plgndr_table
-      character(len=S2_STRING_LEN) :: filename_LUT
+      integer, intent(in) :: lmax,Nuse
+      
+      integer :: itheta,i,l
 
-      real(s2_dp), allocatable :: data_table(:)
-      integer :: l,itheta,i
+      ! If one wants to use table, check if it is readable.
+      if (lut%read_LUT==.true.) then
 
-      open(10,file=trim(filename_LUT)//'.dat')
+         open(10,file=trim(lut%filename_LUT),form='unformatted',&
+              status='old',action='read')
 
-      ! Put all the data in an array.
-      allocate(data_table(0:lmax*Nuse-1))
-      read(10,*)(data_table(i),i=0,lmax*Nuse-1)
+         read(10) lut%lmax_LUT
+         read(10) lut%Nuse_LUT
+         if(lmax .ne. lut%lmax_LUT) then
+            call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_L_INVALID, &
+                 'bianchi2_plm1table_getval')
+            lut%read_LUT=.false. ! Continue without using the table.
 
-      ! Transform the array in a convenient matrix.
-      do l=1, lmax
-         do itheta=0, Nuse-1
-            plgndr_table(l,itheta)=data_table((l-1)*Nuse+itheta)
-         end do
-      end do
+         elseif(Nuse .ne. lut%Nuse_LUT) then
+            call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_THETA_INVALID, &
+                 'bianchi2_plm1table_getval')
+            lut%read_LUT=.false. ! Continue without using the table.
 
-      close(10)
-      deallocate(data_table)
+         else
+            allocate(lut%plgndr_table(1:lmax,0:Nuse-1))
+            ! Transform the array in a convenient matrix.
+            do l=1, lmax
+               do itheta=0, Nuse-1
+                  read(10) lut%plgndr_table(l,itheta)
+               end do
+            end do
+            close(10)
+         end if
+      end if
 
     end subroutine bianchi2_lut_get_table
 
