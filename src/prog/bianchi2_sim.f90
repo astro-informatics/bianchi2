@@ -15,7 +15,7 @@ program bianchi2_sim
   use s2_types_mod
   use s2_sky_mod, only: S2_SKY_FILE_TYPE_MAP, S2_SKY_FILE_TYPE_SKY
   use bianchi2_sky_mod
-  use bianchi2_plm1table_mod
+  use bianchi2_lut_mod
   use bianchi2_error_mod
   use pix_tools, only: nside2npix
 
@@ -47,8 +47,7 @@ program bianchi2_sim
   logical, parameter :: RHAND_DEFAULT = .true.
   logical, parameter :: HARMONIC_SPACE_DEFAULT = .true.
   logical, parameter :: RESCALE_CL_DEFAULT = .true.
-  logical, parameter :: WRITE_LUT_PLGNDR_DEFAULT = .false.
-  logical, parameter :: READ_LUT_PLGNDR_DEFAULT = .false.
+  logical, parameter :: READ_LUT_DEFAULT = .false.
   integer, parameter :: NUSE_DEFAULT = 100
   integer, parameter :: LMAX_DEFAULT = 64
   integer, parameter :: NSIDE_DEFAULT = 128
@@ -74,7 +73,8 @@ program bianchi2_sim
                                     ! simulation in real space but 
                                     ! rotation in harmonic space.
   logical :: rescale_Cl
-  logical :: write_LUT_plgndr, read_LUT_plgndr
+  logical :: read_LUT
+  character(len=S2_STRING_LEN) :: filename_lut
 
   ! Set default parameter values.
   filename_out = 'sky.fits'
@@ -350,18 +350,17 @@ program bianchi2_sim
   filename_out_power_spectrum = parse_string(handle, 'filename_out_power_spectrum', &
        default=trim(filename_out_power_spectrum), descr=description)
 
- ! Get write_LUT_plgndr.
+ ! Get read_LUT.
   description = concatnl('', &
-       'Enter write_LUT_plgndr (logical): ')
-  write_LUT_plgndr = parse_lgt(handle, 'write_LUT_plgndr', &
-       default=WRITE_LUT_PLGNDR_DEFAULT, descr=description)
+       'Enter read_LUT (logical): ')
+  read_LUT = parse_lgt(handle, 'read_LUT', &
+       default=READ_LUT_DEFAULT, descr=description)
 
- ! Get read_LUT_plgndr.
+  ! Get filename_LUT.
   description = concatnl('', &
-       'Enter read_LUT_plgndr (logical): ')
-  read_LUT_plgndr = parse_lgt(handle, 'read_LUT_plgndr', &
-       default=READ_LUT_PLGNDR_DEFAULT, descr=description)
-
+       'Enter filename_LUT: ')
+  filename_LUT = parse_string(handle, 'filename_LUT', &
+       default=trim(filename_LUT), descr=description)
 
   !---------------------------------------
   ! Run simulation and save sky
@@ -374,17 +373,13 @@ program bianchi2_sim
   ! Initialise bianchi2 object.
   if (harmonic_space) then
      
-     ! About the Look-Up-Table.
-     if (write_LUT_plgndr==.true.) then
-        write(*,'(a)') 'Writing the Look-Up-Table.'
-        call bianchi2_plm1table_write(lmax, Nuse)
-     end if
-     call bianchi2_plm1table_check_sizes(lmax, Nuse, read_LUT_plgndr)
+     ! Check size of the  Look-Up-Table.
+     call bianchi2_lut_check_sizes(lmax,Nuse,read_LUT,filename_LUT)
 
      ! Perform the simulation.
      write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space...'
      b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
-          nside, lmax, Nuse, alpha, beta, gamma, read_LUT_plgndr)
+          nside, lmax, Nuse, alpha, beta, gamma, read_LUT,filename_LUT)
      call bianchi2_sky_compute_map(b,nside)
      write(*,'(a)') 'Simulation complete'
      write(*,'(a)')

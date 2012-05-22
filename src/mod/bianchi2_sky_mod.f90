@@ -35,6 +35,7 @@ module bianchi2_sky_mod
   use s2_sky_mod
   use s2_error_mod
   use bianchi2_error_mod
+  use bianchi2_lut_mod
   use omp_lib
 
   implicit none
@@ -355,17 +356,17 @@ module bianchi2_sky_mod
     !!  \param[in] alpha Alpha Euler angle of the rotation.
     !!  \param[in] beta Beta Euler angle of the rotation.
     !!  \param[in] gamma Gamma Euler angle of the rotation.
-    !!  \param[in] read_LUT_plgndr Logical to specify whether use the Look-Up-Table.
+    !!  \param[in] read_LUT Logical to specify whether use the Look-Up-Table.
     !!  \retval b Initialised bianchi2 object with simulated map calculated.
     !!    
     !!  \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
-         nside, lmax, Nuse, alpha, beta, gamma, read_LUT_plgndr) result(b)
+         nside, lmax, Nuse, alpha, beta, gamma, read_LUT,filename_LUT) result(b)
 
       use bianchi2_globaldata_mod
-      use bianchi2_plm1table_mod
+      use bianchi2_lut_mod
       use s2_dl_mod, only : s2_dl_beta_operator
 
       real(s2_dp), intent(in) :: omega_matter_in, omega_lambda_in, h, zE_in, wH
@@ -390,7 +391,8 @@ module bianchi2_sky_mod
       real(s2_dp) :: C_sin, C_cos
       real(s2_dp) :: IA, IB
       real(s2_dp), allocatable :: plgndr_table(:,:)
-      logical :: read_LUT_plgndr
+      logical :: read_LUT
+      character(len=S2_STRING_LEN) :: filename_LUT
       
       ! Parameters for the rotation.
       real(s2_sp), intent(in), optional :: alpha, beta, gamma
@@ -534,14 +536,14 @@ module bianchi2_sky_mod
 
       ! Compute alms.
       allocate(plgndr_table(1:lmax,0:Nuse-1))
-      if (read_LUT_plgndr==.true.) then
-         call bianchi2_plm1table_get_table(plgndr_table,lmax,Nuse)
+      if (read_LUT==.true.) then
+         call bianchi2_lut_get_table(plgndr_table,lmax,Nuse,filename_LUT)
       end if
       lsign = +1d0
 
       !$OMP PARALLEL DEFAULT(none) &
       !$OMP FIRSTPRIVATE(l,lsign,IA,IB) &
-      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign,read_LUT_plgndr,plgndr_table)
+      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid, handedness_sign,read_LUT,plgndr_table)
       !$OMP DO SCHEDULE(static)
       do l=1, lmax
          
@@ -554,8 +556,8 @@ module bianchi2_sky_mod
 
          ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
-         IA = bianchi2_sky_comp_IX(l, lmax,Nuse, A_grid, read_LUT_plgndr,plgndr_table)
-         IB = bianchi2_sky_comp_IX(l, lmax,Nuse, B_grid, read_LUT_plgndr,plgndr_table)
+         IA = bianchi2_sky_comp_IX(l, lmax,Nuse, A_grid, read_LUT,plgndr_table)
+         IB = bianchi2_sky_comp_IX(l, lmax,Nuse, B_grid, read_LUT,plgndr_table)
 
          ! Compute alm for a given 1. Only m=1 is non-zero.
          alm(l,1) = -lsign * pi * cmplx(- handedness_sign * (IB - IA), (IA + IB))
@@ -1382,11 +1384,11 @@ module bianchi2_sky_mod
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------  
 
-    function bianchi2_sky_comp_IX(l,lmax,Nuse, X_grid, read_LUT_plgndr,plgndr_table) result(IX)
+    function bianchi2_sky_comp_IX(l,lmax,Nuse, X_grid, read_LUT,plgndr_table) result(IX)
 
       integer, intent(in) :: l,lmax, Nuse
       real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B.
-      logical, intent(in) :: read_LUT_plgndr
+      logical, intent(in) :: read_LUT
       real(s2_dp),dimension(1:lmax,0:Nuse), intent(in) ::plgndr_table
       real(s2_dp) :: IX
       
@@ -1399,17 +1401,26 @@ module bianchi2_sky_mod
       theta = 0d0
       dtheta = (pi - 0d0) / Real(Nuse, s2_dp)
       
-      ! Sum all the terms.
-      do itheta = 0, Nuse-1      
-         if (read_LUT_plgndr==.true.) then
-            Plm1 = plgndr_table(l,itheta) ! Takes the value in the matrix.
-         else
-            Plm1 = plgndr(l, 1, cos(theta)) ! Re-compute the value.
-         end if
-         integrand = sin(theta) * X_grid(itheta) * Plm1
-         IX = IX + integrand*dtheta
-         theta = theta + dtheta
-      end do
+      ! Compute the sum of all the terms.
+      if (read_LUT==.true.) then
+
+         do itheta = 0, Nuse-1      
+            Plm1 = plgndr_table(l,itheta) ! Take the value in the matrix.
+            integrand = sin(theta) * X_grid(itheta) * Plm1
+            IX = IX + integrand*dtheta
+            theta = theta + dtheta
+         end do
+
+      else
+
+         do itheta = 0, Nuse-1  
+            Plm1 = bianchi2_lut_plgndr(l, 1, cos(theta)) ! Re-compute the value.
+            integrand = sin(theta) * X_grid(itheta) * Plm1
+            IX = IX + integrand*dtheta
+            theta = theta + dtheta
+         end do
+
+      end if
 
       ! Compute the definitive integral.
       IX = IX * sqrt( (2d0*l+1d0) / real(4d0*pi*l*(l+1d0), s2_dp) ) 
@@ -1417,63 +1428,5 @@ module bianchi2_sky_mod
 
     end function bianchi2_sky_comp_IX
  
-
-    !--------------------------------------------------------------------------
-    ! Special function routines
-    !--------------------------------------------------------------------------
-
-    !--------------------------------------------------------------------------
-    ! plgndr
-    !
-    !> Computes the associated Legendre function for l and m.
-    !!  Adapted from numerical recipes 
-    !!
-    !!   \note Numerical recipies comment:
-    !!     Computes the associated Legendre polynomial P_m^l(x).
-    !!
-    !!   \param[in] l Legendre function l parameter.
-    !!   \param[in] m Legendre function m parameter.
-    !!   \param[in] x Point to evaluate specified Legendre funtion at.
-    !!
-    !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
-    !--------------------------------------------------------------------------
-
-    function plgndr(l,m,x)
-
-      integer :: l, m
-      real(s2_dp) :: plgndr, x
-
-      integer :: i, ll
-      real(s2_dp) ::  fact, pll, pmm, pmmp1, somx2
-
-      if(m<0 .or. m>l .or. abs(x)>1d0) stop 'bad arguments in plgndr'
-
-      pmm=1.                     ! Compute Pmm.
-      if(m.gt.0) then
-         somx2=sqrt((1.-x)*(1.+x))
-         fact=1.
-         do i=1,m
-            pmm=-pmm*fact*somx2
-            fact=fact+2.
-         enddo
-      endif
-      if(l.eq.m) then
-         plgndr=pmm
-      else
-         pmmp1=x*(2*m+1)*pmm      ! Compute Pm m+1.
-         if(l.eq.m+1) then
-            plgndr=pmmp1
-         else                    ! Compute Pm  l , l > m+ 1.
-            do ll=m+2,l
-               pll=(x*(2*ll-1)*pmmp1-(ll+m-1)*pmm)/(ll-m)
-               pmm=pmmp1
-               pmmp1=pll
-            enddo
-            plgndr=pll
-         endif
-      endif
-      return
-    end function plgndr
-
 
 end module bianchi2_sky_mod
