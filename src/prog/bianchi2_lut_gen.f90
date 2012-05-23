@@ -10,18 +10,22 @@
 program bianchi2_lut_gen
 
   use s2_types_mod
-  use bianchi2_lut_mod, only: bianchi2_lut_write
+  use bianchi2_lut_mod
 
   implicit none
 
+  type(bianchi2_lut) :: lut
   integer :: lmax, Nuse
   character(len=S2_STRING_LEN) :: filename_LUT
 
   !Get the arguments.
   call parse_options
 
-  ! Write the LUT.
-  call bianchi2_lut_write(lmax, Nuse, filename_LUT)
+  ! Initialize the lut.
+  lut = bianchi2_lut_init(lmax,Nuse)
+
+  ! Write the lut into a file.
+  call bianchi2_lut_write(lut,filename_LUT)
   write(*,'(a)') 'LUT written in '//trim(filename_LUT)
 
 

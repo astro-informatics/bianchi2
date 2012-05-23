@@ -362,7 +362,7 @@ module bianchi2_sky_mod
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
-         nside, lmax, Nuse, alpha, beta, gamma) result(b)
+         nside, lmax, Nuse, alpha, beta, gamma,lut) result(b)
 
       use bianchi2_globaldata_mod
       use s2_dl_mod, only : s2_dl_beta_operator
@@ -370,6 +370,7 @@ module bianchi2_sky_mod
       real(s2_dp), intent(in) :: omega_matter_in, omega_lambda_in, h, zE_in, wH
       logical, intent(in) :: rhand
       integer, intent(in) :: nside, lmax, Nuse
+      type(bianchi2_lut), intent(in), optional :: lut
       type(bianchi2_sky) :: b
   
       real(s2_dp) :: tstop_use
@@ -547,8 +548,8 @@ module bianchi2_sky_mod
 
          ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
-         IA = bianchi2_sky_comp_IX(l,lmax,Nuse,A_grid)
-         IB = bianchi2_sky_comp_IX(l,lmax,Nuse,B_grid)
+         IA = bianchi2_sky_comp_IX(l,lmax,Nuse,A_grid,lut)
+         IB = bianchi2_sky_comp_IX(l,lmax,Nuse,B_grid,lut)
 
          ! Compute alm for a given 1. Only m=1 is non-zero.
          alm(l,1) = -lsign * PI * cmplx(- handedness_sign * (IB - IA), (IA + IB))
@@ -1373,10 +1374,11 @@ module bianchi2_sky_mod
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------  
 
-    function bianchi2_sky_comp_IX(l,lmax,Nuse, X_grid) result(IX)
+    function bianchi2_sky_comp_IX(l,lmax,Nuse,X_grid,lut) result(IX)
 
-      integer, intent(in) :: l,lmax, Nuse
+      integer, intent(in) :: l,lmax,Nuse
       real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B.
+      type(bianchi2_lut), intent(in), optional :: lut
       real(s2_dp) :: IX
       
       real(s2_dp) :: integrand, Plm1
@@ -1389,10 +1391,10 @@ module bianchi2_sky_mod
       dtheta = (PI - 0d0) / Real(Nuse, s2_dp)
       
       ! Compute the sum of all the terms.
-      if (lut%read_LUT==.true.) then
+      if (present(lut)) then
 
          do itheta = 0, Nuse-1      
-            Plm1 = lut%plgndr_table(l,itheta) ! Take the value in the matrix.
+            Plm1 = bianchi2_lut_access(lut,l,itheta) ! Take the value in the table.
             integrand = sin(theta) * X_grid(itheta) * Plm1
             IX = IX + integrand*dtheta
             theta = theta + dtheta

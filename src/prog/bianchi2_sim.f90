@@ -75,6 +75,7 @@ program bianchi2_sim
   logical :: rescale_Cl
   logical :: read_LUT
   character(len=S2_STRING_LEN) :: filename_LUT
+  type(bianchi2_lut) :: lut
 
   ! Set default parameter values.
   filename_out = 'sky.fits'
@@ -373,19 +374,21 @@ program bianchi2_sim
   ! Initialise bianchi2 object.
   if (harmonic_space) then
      
-     ! Initialize the  Look-Up-Table.
-     call bianchi2_lut_init(read_LUT,filename_LUT)
-     call bianchi2_lut_get_table(lmax,Nuse)
+     ! If using a Look-Up-Table.
+     if (read_LUT==.true.) then
 
-     ! Perform the simulation.
-     write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space...'
-     b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
+        lut = bianchi2_lut_read(lmax,Nuse,filename_LUT)
+        write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space, using a lut...'
+        b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
+          nside, lmax, Nuse, alpha, beta, gamma,lut)
+        deallocate(lut%table_LUT)
+     else
+        write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space, without using a lut...'
+        b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
           nside, lmax, Nuse, alpha, beta, gamma)
-     call bianchi2_sky_compute_map(b,nside)
-
-     if (lut%read_LUT==.true.) then
-        deallocate(lut%plgndr_table)
      end if
+
+     call bianchi2_sky_compute_map(b,nside)
 
      write(*,'(a)') 'Simulation complete'
      write(*,'(a)')
