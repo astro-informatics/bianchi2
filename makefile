@@ -17,7 +17,7 @@ ifneq ($(USEPGPLOT),yes)
 endif
 
 OPT = $(OPTPGPLOT) -DMILLIK \
-      -O3 -DBIANCHI2_VERSION=\"1.0b2\" -DBIANCHI2_BUILD=\"`svnversion -n .`\" 
+      -O3 -DBIANCHI2_VERSION=\"2.0\" -DBIANCHI2_BUILD=\"`svnversion -n .`\" 
 
 ifeq ($(FC),nagfor)
   OPT += -Wc,-fno-common 
@@ -194,6 +194,13 @@ $(BIANCHI2INC)/%.o: $(BIANCHI2PROG)/%.f90
 
 $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a: $(BIANCHI2OBJ)
 	ar -r $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a $(BIANCHI2OBJ)
+
+
+# Tests
+
+.PHONY: runtest
+runtest: prog
+	./bin/bianchi2_sim param.par
 
 
 # Documentation

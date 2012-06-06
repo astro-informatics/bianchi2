@@ -2,13 +2,12 @@
 !> \mainpage Bianchi2
 !!
 !! The Bianchi2 package provides functionality to simulate Bianchi
-!! Type VIIh induced temperature fluctuations in CMB maps of a
+!! type VIIh induced temperature fluctuations in CMB maps of a
 !! universe with shear and rotation. The implementation is based on
 !! the solutions to the Bianchi models derived by Anthony Lasenby (not
 !! yet published) that incorporate a cosmological
 !! constant. Functionality is provided to compute the induced
-!! fluctuations on the sphere directly in either real or harmonic
-!! space.
+!! fluctuations on the sphere in either real or harmonic space.
 !!
 !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">

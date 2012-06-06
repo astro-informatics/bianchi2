@@ -13,11 +13,12 @@ DESCRIPTION
      energy component.
 
 VERSION
-     Release 1.0, 1 July 2008
+     Release 2.0, XX XXX 2012
 
 AUTHORS
-     A. N. Lasenby (a.n.lasenby@mrao.cam.ac.uk)
      J. D. McEwen (mcewen@mrao.cam.ac.uk)
+     A. N. Lasenby (a.n.lasenby@mrao.cam.ac.uk)
+     T. Josset
 
 ACKNOWLEDGEMENTS
      M. P. Hobson
@@ -30,7 +31,7 @@ REFERENCE
      appear.  Nevertheless, we make our implementation of these
      solutions available in this package.  If you use the code to
      produce published works please reference the download site
-     http://www.mrao.cam.ac.uk/~jdm57/ and our related paper on
+     http://www.jasonmcewen.org/ and our related paper on
      Bayesian evidence for Bianchi VIIh models with dark energy in the
      WMAP CMB data:
        M. Bridges, J. D. McEwen, A. N. Lasenby, and
@@ -39,7 +40,7 @@ REFERENCE
        (astro-ph/0605325).
 
 DOCUMENTATION
-     See doc/index_bianchi2.html
+     See doc/index.html
 
 REQUIREMENTS
      S2 (http://www.mrao.cam.ac.uk/~jdm57/)
@@ -48,10 +49,10 @@ REQUIREMENTS
      NAG numerical libraries (http://www.nag.co.uk)
 
 INSTALLATION
-     See doc/index_bianchi2.html
+     See doc/index.html
 
 DOWNLOAD
-     http://www.mrao.cam.ac.uk/~jdm57/
+     http://www.jasonmcewen.org/
 
 SUPPORT
      Contact Jason McEwen (mcewen@mrao.cam.ac.uk)
@@ -61,10 +62,12 @@ NOTE
      Please report problems/bugs by email to: mcewen@mrao.cam.ac.uk
 
 LICENSE 
-     BIANCHI2 package to simulate Bianchi induced temperature
-     fluctuations in CMB maps when incorporating a cosmological
-     constant
-     Copyright (C) 2005  Anthony Lasenby & Jason McEwen
+     BIANCHI2 package to simulate Bianchi type VIIh induced
+     temperature fluctuations in CMB maps when incorporating a
+     cosmological constant
+
+     Copyright (C) 2012 Jason McEwen, Anthony Lasenby and Thibaut
+     Josset
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
