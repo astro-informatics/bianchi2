@@ -119,7 +119,7 @@ ifeq ($(FC),ifort)
 #                   -framework IOKit -framework CoreFoundation
 
     # Static link.
-    NAGLIBFULL   = -i8 -I/opt/NAG/flmi623dcl/nag_interface_blocks \
+    NAGLIBFULL   = -I/opt/NAG/flmi623dcl/nag_interface_blocks \
                    /opt/NAG/flmi623dcl/lib/libnag_nag.a \
                    -framework IOKit -framework CoreFoundation
 
