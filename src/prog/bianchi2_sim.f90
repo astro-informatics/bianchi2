@@ -4,6 +4,12 @@
 !> Simulate a Bianchi2 VII_h model of the CMB, incorporating a cosmological
 !! constant.
 !!
+!! \section Usage Usage
+!! \code 
+!! bianchi2_sim 
+!! bianchi2_sim param.par
+!! \endcode
+!!
 !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !! \authors <a href="http://www.google.co.uk/search?q=Anthony%20Lasenby">
 !!          Anthony Lasenby</a>
