@@ -9,23 +9,23 @@ wH           = 1d-10
 rhand        = T
 
 alpha  = 0e0
-beta   = 0e0
+beta   = -90e0
 gamma  = 0e0
 
 apply_beam = F
 fwhm       = 100
+lmax      = 64
 
-lmax      = 128
 nside     = 128
 
 harmonic_space = F
-Nuse = 1000
+Nuse = 100
 
-filename_out = sky_bianchi2_h1_2_real.fits
+filename_out = sky_bianchi2_h1.fits
 filetype  = map
 
 rescale_Cl = .true.
-filename_out_power_spectrum = Cl_bianchi2_h1.txt
+filename_out_power_spectrum = Cl_bianchi2_h1.dat
 
-read_LUT = F
-filename_LUT = lut_lmax064_Ntheta1000.dat
+read_LUT = .false.
+filename_LUT = no_table
