@@ -181,7 +181,7 @@ program bianchi2_sim
   end if
 
  ! Get zE.
-  write(line,'(a,e8.2,a,e8.2,a)') '(In the range ', &
+  write(line,'(a,e9.2,a,e9.2,a)') '(In the range ', &
        ZE_LOWER, ' <= zE <= ', ZE_UPPER, ')'
   description = concatnl('', &
        'Enter zE: ', &
