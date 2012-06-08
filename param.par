@@ -1,31 +1,31 @@
 # BIANCHI2 VII_h simualtion parameter file
 
-omega_matter = 0.30
-omega_lambda = 0.60
-h            = 1
-zE           = 1100
-wH           = 1d-10
-rhand        = T
+omega_matter    = 0.30
+omega_lambda    = 0.60
+h               = 1
+zE              = 1100
+wH              = 1d-10
+rhand           = T
 
-alpha  = 0e0
-beta   = -90e0
-gamma  = 0e0
+alpha           = 0e0
+beta            = -90e0
+gamma           = 0e0
 
-apply_beam = F
-fwhm       = 100
-lmax      = 64
+apply_beam      = F
+fwhm            = 100
 
-nside     = 128
+lmax            = 64
+nside           = 128
 
-harmonic_space = F
-Ntheta = 100
+harmonic_space  = T
+Ntheta          = 100
 
-filename_out = sky_bianchi2_h1_real.fits
-filetype  = map
+filename_out    = sky_bianchi2_h1.fits
+filetype        = map
 
-out_Cl = T
-rescale_Cl = T
+out_Cl          = F
+rescale_Cl      = T
 filename_out_Cl = Cl_bianchi2_h1.txt
 
-read_LUT = .false.
-filename_LUT = no_table
+read_LUT        = F
+filename_LUT    = lut.dat
