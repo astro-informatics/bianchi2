@@ -18,14 +18,15 @@ lmax      = 64
 
 nside     = 128
 
-harmonic_space = F
-Nuse = 100
+harmonic_space = F      #if F then the following option is ignored.
+Ntheta = 100
 
 filename_out = sky_bianchi2_h1.fits
 filetype  = map
 
-rescale_Cl = .true.
-filename_out_power_spectrum = Cl_bianchi2_h1.dat
+out_Cl = T              #if F then the two following options are ignored.
+rescale_Cl = T          #if T then l*(l+1)*Cl/(2*PI) is written.
+filename_out_Cl = Cl_bianchi2_h1.txt
 
-read_LUT = .false.
+read_LUT = .false.      #if F then the following option is ignored.
 filename_LUT = no_table

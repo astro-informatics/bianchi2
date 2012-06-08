@@ -476,14 +476,14 @@ module bianchi2_sky_mod
          final_dens = (3d0*RH_final**2-Lambda*R_final**2-3d0*b2gd_alpha**2)/(R_final**2)
 
         C_sin=-U10_req/(1+b2gd_ze)*2d0*( &
-                1/R_final*(sin_bit_final*cos(3d0/4d0*PI)-cos_bit_final*sin(3d0/4d0*PI)) &
+                1d0/R_final*(sin_bit_final*cos(3d0/4d0*PI)-cos_bit_final*sin(3d0/4d0*PI)) &
                 - 3.D0/final_dens/R_final**5 &
                   * exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
                   / (-1.D0-sin(b2gd_theta_0) &
                      + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
                      - exp(2.D0*b2gd_alpha*tstop_use)) &
                   * b2gd_alpha &
-                  * sin((b2gd_alpha*tstop_use- &
+                  * sin((-b2gd_alpha*tstop_use- &
                           dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0 &
                               + exp(-2.D0*b2gd_alpha*tstop_use) &
                               - exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0) &
@@ -501,14 +501,14 @@ module bianchi2_sky_mod
                )
 
         C_cos=-U10_req/(1+b2gd_ze)*2d0*( &
-                1/R_final*(sin_bit_final*sin(3d0/4d0*PI)+cos_bit_final*cos(3d0/4d0*PI)) &
+                1d0/R_final*(sin_bit_final*sin(3d0/4d0*PI)+cos_bit_final*cos(3d0/4d0*PI)) &
                 + 3.D0/final_dens/R_final**5 &
                   * exp(b2gd_alpha*tstop_use)*cos(b2gd_theta_0) &
                   / (-1.D0-sin(b2gd_theta_0) &
                      + exp(2.D0*b2gd_alpha*tstop_use)*sin(b2gd_theta_0) &
                      - exp(2.D0*b2gd_alpha*tstop_use)) &
                   * b2gd_alpha &
-                  * cos((b2gd_alpha*tstop_use- &
+                  * cos((-b2gd_alpha*tstop_use- &
                           dlog(cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0 &
                               + exp(-2.D0*b2gd_alpha*tstop_use) &
                               - exp(-2.D0*b2gd_alpha*tstop_use)*cos(PI/4.D0+b2gd_theta_0/2.D0)**2.D0) &
@@ -1400,26 +1400,25 @@ module bianchi2_sky_mod
 
 
       IX = 0d0
-      theta = 0d0
       dtheta = (PI - 0d0) / Real(Ntheta, s2_dp)
       
       ! Compute the sum of all the terms.
       if (present(lut)) then
 
-         do itheta = 0, Ntheta-1      
+         do itheta = 0, Ntheta-1   
+            theta = itheta*dtheta
             Plm1 = bianchi2_lut_access(lut,l,itheta) ! Take the value in the table.
             integrand = sin(theta) * X_grid(itheta) * Plm1
             IX = IX + integrand*dtheta
-            theta = theta + dtheta
          end do
 
       else
 
          do itheta = 0, Ntheta-1  
+            theta = itheta*dtheta
             Plm1 = bianchi2_lut_plgndr(l, 1, cos(theta)) ! Re-compute the value.
             integrand = sin(theta) * X_grid(itheta) * Plm1
             IX = IX + integrand*dtheta
-            theta = theta + dtheta
          end do
 
       end if

@@ -46,15 +46,16 @@ program bianchi2_sim
   real(s2_sp), parameter :: FWHM_DEFAULT = 330d0
   logical, parameter :: RHAND_DEFAULT = .true.
   logical, parameter :: HARMONIC_SPACE_DEFAULT = .true.
+  logical, parameter :: OUT_CL_DEFAULT = .false.
   logical, parameter :: RESCALE_CL_DEFAULT = .true.
   logical, parameter :: READ_LUT_DEFAULT = .false.
-  integer, parameter :: NUSE_DEFAULT = 100
+  integer, parameter :: NTHETA_DEFAULT = 100
   integer, parameter :: LMAX_DEFAULT = 64
   integer, parameter :: NSIDE_DEFAULT = 128
   character(len=*), parameter :: FILE_TYPE_MAP_STR = 'map'
   character(len=*), parameter :: FILE_TYPE_SKY_STR = 'sky'
 
-  character(len=S2_STRING_LEN) :: filename_out, filename_out_power_spectrum
+  character(len=S2_STRING_LEN) :: filename_out, filename_out_Cl
   character(len=S2_STRING_LEN) :: filetype_str = FILE_TYPE_MAP_STR
   integer :: filetype = S2_SKY_FILE_TYPE_MAP
 
@@ -72,6 +73,7 @@ program bianchi2_sim
   logical :: rotation_alm = .false. ! Choose true only for 
                                     ! simulation in real space but 
                                     ! rotation in harmonic space.
+  logical :: out_Cl
   logical :: rescale_Cl
   logical :: read_LUT
   character(len=S2_STRING_LEN) :: filename_LUT
@@ -79,7 +81,7 @@ program bianchi2_sim
 
   ! Set default parameter values.
   filename_out = 'sky.fits'
-  filename_out_power_spectrum = 'cl.txt'
+  filename_out_Cl = 'out_Cl.txt'
   filename_LUT = 'lut.dat'
   omega_matter = OMEGA_MATTER_DEFAULT
   omega_lambda = OMEGA_LAMBDA_DEFAULT
@@ -92,7 +94,7 @@ program bianchi2_sim
   rhand = RHAND_DEFAULT
 
   harmonic_space = HARMONIC_SPACE_DEFAULT
-  Ntheta = NUSE_DEFAULT
+  Ntheta = NTHETA_DEFAULT
 
   write(*,'(a)') '***********************************************'
   write(*,'(a)') 'BIANCHI2 VII_h rotating universe CMB simulation'
@@ -302,14 +304,19 @@ program bianchi2_sim
        'Enter harmonic_space status (logical): ')
   harmonic_space = parse_lgt(handle, 'harmonic_space', &
        default=HARMONIC_SPACE_DEFAULT, descr=description)
-
-
-  ! Get Ntheta.
-  description = concatnl("", &
-       "Enter the number of terms (Ntheta) used for the integrations: ")
-  Ntheta = parse_int(handle, 'Ntheta', &
-       default=NUSE_DEFAULT, descr=description)
- 
+  if (harmonic_space == .true.) then
+     ! Get Ntheta.
+     description = concatnl("", &
+          "Enter the number of terms (Ntheta) used for the integrations: ")
+12   continue
+     Ntheta = parse_int(handle, 'Ntheta', &
+          default=NTHETA_DEFAULT, descr=description)
+     if (Ntheta <9) then
+        if(handle%interactive) goto 12
+        call bianchi2_error(BIANCHI2_ERROR_SIM_PARAM_INVALID, 'bianchi2_sim', &
+             comment_add='Ntheta invalid')
+     end if
+  end if
 
   ! Get filename_out.
   description = concatnl('', &
@@ -320,7 +327,7 @@ program bianchi2_sim
   ! Get output file type: map or sky.
   description = concatnl('', &
        'Enter output file type (filetype={map; sky}): ')
-12  continue
+13  continue
   filetype_str = parse_string(handle, 'filetype', &
        default=trim(filetype_str), descr=description)
 
@@ -334,24 +341,31 @@ program bianchi2_sim
       filetype = S2_SKY_FILE_TYPE_SKY
 
     case default
-       if(handle%interactive) goto 12
+       if(handle%interactive) goto 13
        call bianchi2_error(BIANCHI2_ERROR_SIM_PARAM_INVALID, 'bianchi2_sim', &
          comment_add='Invalid output file type')
 
   end select
 
-  ! Get rescale_Cl.
-  ! .true. -> l*(l+1)*Cl / (2*PI)
+ ! Get out_Cl.
   description = concatnl('', &
-       'Enter rescale_Cl (logical): ')
-  rescale_Cl = parse_lgt(handle, 'rescale_Cl', &
-       default=RESCALE_CL_DEFAULT, descr=description)
+       'Enter out_Cl (logical): ')
+  out_Cl = parse_lgt(handle, 'out_Cl', &
+       default=OUT_CL_DEFAULT, descr=description)
 
-  ! Get filename_out_power_spectrum.
-  description = concatnl('', &
-       'Enter filename_out_power_spectrum: ')
-  filename_out_power_spectrum = parse_string(handle, 'filename_out_power_spectrum', &
-       default=trim(filename_out_power_spectrum), descr=description)
+  if (out_Cl == .true.) then
+     ! Get rescale_Cl. 
+     description = concatnl('', &
+          'Enter rescale_Cl (logical): ')
+     rescale_Cl = parse_lgt(handle, 'rescale_Cl', &
+          default=RESCALE_CL_DEFAULT, descr=description)
+
+     ! Get filename_out_Cl.
+     description = concatnl('', &
+          'Enter filename_out_Cl: ')
+     filename_out_Cl = parse_string(handle, 'filename_out_Cl', &
+          default=trim(filename_out_Cl), descr=description)
+  end if
 
  ! Get read_LUT.
   description = concatnl('', &
@@ -359,11 +373,13 @@ program bianchi2_sim
   read_LUT = parse_lgt(handle, 'read_LUT', &
        default=READ_LUT_DEFAULT, descr=description)
 
-  ! Get filename_LUT.
-  description = concatnl('', &
-       'Enter filename_LUT: ')
-  filename_LUT = parse_string(handle, 'filename_LUT', &
-       default=trim(filename_LUT), descr=description)
+  if (read_LUT==.true.) then
+     ! Get filename_LUT.
+     description = concatnl('', &
+          'Enter filename_LUT: ')
+     filename_LUT = parse_string(handle, 'filename_LUT', &
+          default=trim(filename_LUT), descr=description)
+  end if
 
   !---------------------------------------
   ! Run simulation and save sky
@@ -383,7 +399,7 @@ program bianchi2_sim
         write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space, using a lut...'
         b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
           nside, lmax, Ntheta, alpha, beta, gamma,lut)
-        deallocate(lut%table_LUT)
+        call bianchi2_lut_free(lut)
      else
         write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space, without using a lut...'
         b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
@@ -429,14 +445,16 @@ program bianchi2_sim
   write(*,'(a,a)') 'Simulated map written to ', trim(filename_out)
   write(*,'(a)')
 
-  ! Compute and write the power spectrum.
-  allocate(Cl(0:lmax))
-  call bianchi2_sky_compute_Cl(b,lmax,Cl)
-  call bianchi2_sky_write_Cl(Cl,lmax,rescale_Cl,filename_out_power_spectrum)
-  deallocate(Cl)
-  write(*,'(a,a)') 'Simulated power spectrum written to ', &
-                    trim(filename_out_power_spectrum)
-  write(*,'(a)')
+  if (out_Cl == .true.) then
+     ! Compute and write the power spectrum.
+     allocate(Cl(0:lmax))
+     call bianchi2_sky_compute_Cl(b,lmax,Cl)
+     call bianchi2_sky_write_Cl(Cl,lmax,rescale_Cl,filename_out_Cl)
+     deallocate(Cl)
+     write(*,'(a,a)') 'Simulated power spectrum written to ', &
+          trim(filename_out_Cl)
+     write(*,'(a)')
+  end if
 
   ! Write bianchi2 simulation variables to standard output.
   write(*,'(a)') 'Simulation parameters:'

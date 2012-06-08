@@ -30,6 +30,7 @@ module bianchi2_lut_mod
             bianchi2_lut_write, &
             bianchi2_lut_read, &
             bianchi2_lut_access, &
+            bianchi2_lut_free, &
             bianchi2_lut_plgndr
 
 
@@ -46,7 +47,7 @@ module bianchi2_lut_mod
      integer :: Ntheta_LUT
      !> Contains the values of the Legendre functions.  
      !! Indexed by table_LUT(1:lmax,0:Ntheta-1).
-     real(s2_dp), dimension(:,:), allocatable, public :: table_LUT
+     real(s2_dp), dimension(:,:), allocatable :: table_LUT
   end type bianchi2_lut
 
 
@@ -82,8 +83,8 @@ module bianchi2_lut_mod
 
       dtheta = (PI - 0d0) / Real(Ntheta, s2_dp)
       do l=1, lmax
-         theta = 0d0
          do itheta=0, Ntheta-1
+            theta = itheta*dtheta
             ! Compute the data with plgndr.
             lut%table_LUT(l,itheta) = bianchi2_lut_plgndr(l,1,cos(theta))
             theta = theta + dtheta
@@ -201,6 +202,24 @@ module bianchi2_lut_mod
       plm1 = lut%table_LUT(l,itheta)
 
     end function bianchi2_lut_access
+
+    !--------------------------------------------------------------------------
+    ! bianchi2_lut_free
+    !
+    !> Deallocate the Look_Up_Table.
+    !!
+    !!   \param[in] lut Bianchi2_lut object to make free.
+    !!
+    !! \authors Thibaut Josset
+    !--------------------------------------------------------------------------
+
+    subroutine bianchi2_lut_free(lut)
+      
+      type(bianchi2_lut), intent(in) :: lut
+
+      deallocate(lut%table_LUT)
+
+    end subroutine bianchi2_lut_free
 
 
     !--------------------------------------------------------------------------
