@@ -18,9 +18,6 @@ program bianchi2_about
 
   implicit none
 
-  ! Parse input parameters.
-  call parse_options()
-
   ! Display info.
   write(*,'(a)') "=========================================================="
   write(*,'(a)') "BIANCHI2 package to simulate Bianchi type VIIh induced"
