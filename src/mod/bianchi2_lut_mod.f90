@@ -42,9 +42,9 @@ module bianchi2_lut_mod
   type, public :: bianchi2_lut
      private
      !> Maximal spherical harmonic to consider.
-     integer :: lmax_LUT
+     integer :: lmax_LUT = 0
      !> Number of points for theta.
-     integer :: Ntheta_LUT
+     integer :: Ntheta_LUT = 0
      !> Contains the values of the Legendre functions.  
      !! Indexed by table_LUT(1:lmax,0:Ntheta-1).
      real(s2_dp), dimension(:,:), allocatable :: table_LUT
@@ -215,9 +215,11 @@ module bianchi2_lut_mod
 
     subroutine bianchi2_lut_free(lut)
       
-      type(bianchi2_lut), intent(in) :: lut
+      type(bianchi2_lut), intent(inout) :: lut
 
-      deallocate(lut%table_LUT)
+      if(allocated(lut%table_LUT)) deallocate(lut%table_LUT)
+      lut%lmax_LUT = 0
+      lut%Ntheta_LUT = 0
 
     end subroutine bianchi2_lut_free
 

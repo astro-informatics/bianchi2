@@ -1,5 +1,4 @@
 # BIANCHI2 VII_h simualtion parameter file
-# Jason McEwen                October 2005
 
 omega_matter = 0.30
 omega_lambda = 0.60
@@ -18,15 +17,15 @@ lmax      = 64
 
 nside     = 128
 
-harmonic_space = F      #if F then the following option is ignored.
+harmonic_space = F
 Ntheta = 100
 
-filename_out = sky_bianchi2_h1.fits
+filename_out = sky_bianchi2_h1_real.fits
 filetype  = map
 
-out_Cl = T              #if F then the two following options are ignored.
-rescale_Cl = T          #if T then l*(l+1)*Cl/(2*PI) is written.
+out_Cl = T
+rescale_Cl = T
 filename_out_Cl = Cl_bianchi2_h1.txt
 
-read_LUT = .false.      #if F then the following option is ignored.
+read_LUT = .false.
 filename_LUT = no_table
