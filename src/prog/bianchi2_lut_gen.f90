@@ -2,7 +2,18 @@
 ! bianchi2_lut_gen -- BIANCHI2 writting LUT program
 !
 !> Generate a Look-Up-Table containing the values of the Legendre functions
-!! for a given couple (lmax,Nuse).
+!! for a given couple (lmax,Ntheta).
+!!
+!! \section Usage Usage
+!! \code 
+!! bianchi2_lut_gen [-lmax lmax]
+!!                  [-Ntheta Ntheta]
+!!                  [-out filename_LUT]
+!! \endcode
+!!
+!! \param[in] lmax Maximum spherical harmonic order to consider.
+!! \param[in] Ntheta Number of theta grid points to consider.
+!! \param[in] out Filename of the output LUT.
 !!
 !! \authors Thibaut Josset
 !----------------------------------------------------------------------------
@@ -15,14 +26,14 @@ program bianchi2_lut_gen
   implicit none
 
   type(bianchi2_lut) :: lut
-  integer :: lmax, Nuse
+  integer :: lmax, Ntheta
   character(len=S2_STRING_LEN) :: filename_LUT
 
   !Get the arguments.
   call parse_options
 
   ! Initialize the lut.
-  lut = bianchi2_lut_init(lmax,Nuse)
+  lut = bianchi2_lut_init(lmax,Ntheta)
 
   ! Write the lut into a file.
   call bianchi2_lut_write(lut,filename_LUT)
@@ -30,13 +41,13 @@ program bianchi2_lut_gen
 
 
   contains
+
   !------------------------------------------------------------------------
   ! Parse options
   !
-  !! Parse the options passed when program called.
+  !> Parse the options passed when program called.
   !!
   !! \authors Thibaut Josset
-  !!
   !------------------------------------------------------------------------
 
     subroutine parse_options
@@ -67,15 +78,15 @@ program bianchi2_lut_gen
             
          case ('-help')
             write(*,'(a)') 'Usage: bianchi2_lut_gen [-lmax lmax]'
-            write(*,'(a)') '                        [-Nuse Nuse]'
+            write(*,'(a)') '                        [-Ntheta Ntheta]'
             write(*,'(a)') '                        [-out filename_LUT]'
             stop
             
          case ('-lmax')
             read(arg,*) lmax
 
-         case ('-Nuse')  
-            read(arg,*) Nuse
+         case ('-Ntheta')  
+            read(arg,*) Ntheta
             
          case ('-out')
             filename_LUT = trim(arg)

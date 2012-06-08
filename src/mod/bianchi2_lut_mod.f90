@@ -2,8 +2,11 @@
 ! bianchi2_lut_mod
 !
 !> Lookup table for associated Legendre function for case where m=1.
-!! Note tailored to Bianchi2 code since input
-!! for associated Legendre function is theta not x.
+!! Also contains functionality to compute associated Legendre
+!! functions if a LUT is not used.
+!!
+!! \note Tailored to Bianchi2 code since input for associated Legendre
+!! function is theta not x.
 !!
 !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
 !! \authors Thibaut Josset
@@ -18,6 +21,7 @@ module bianchi2_lut_mod
 
   private
 
+
   !---------------------------------------
   ! Subroutine and function scope
   !---------------------------------------
@@ -28,52 +32,58 @@ module bianchi2_lut_mod
             bianchi2_lut_access, &
             bianchi2_lut_plgndr
 
+
   !---------------------------------------
   ! Data types
   !---------------------------------------
+
+  !> Look-up-table that contains precomputed associated Legendre functions.
   type, public :: bianchi2_lut
      private
      !> Maximal spherical harmonic to consider.
      integer :: lmax_LUT
      !> Number of points for theta.
-     integer :: Nuse_LUT
-     !> Contains the values of the Legendre functions.
+     integer :: Ntheta_LUT
+     !> Contains the values of the Legendre functions.  
+     !! Indexed by table_LUT(1:lmax,0:Ntheta-1).
      real(s2_dp), dimension(:,:), allocatable, public :: table_LUT
-
   end type bianchi2_lut
 
-!----------------------------------------------------------------------
+
+  !---------------------------------------------------------------------------
 
   contains
+
 
     !-------------------------------------------------------------------------
     ! bianchi2_lut_init
     !
-    !> Initalizes a lut using lmax and Nuse.
+    !> Initalizes a lut using lmax and Ntheta.
     !!
     !!   \param[in] lmax Maximal harmonic to consider.
-    !!   \param[in] Nuse Number of points for theta.
+    !!   \param[in] Ntheta Number of points for theta.
     !!   \retval lut Initialized bianchi2_lut object.
     !!
     !! \authors Thibaut Josset
     !-------------------------------------------------------------------------
-    function bianchi2_lut_init(lmax,Nuse) result(lut)
+
+    function bianchi2_lut_init(lmax,Ntheta) result(lut)
       
-      integer, intent(in) :: lmax, Nuse
+      integer, intent(in) :: lmax, Ntheta
       type(bianchi2_lut) :: lut
 
       integer :: l, itheta
       real(s2_dp) :: theta,dtheta
 
       lut%lmax_LUT = lmax
-      lut%Nuse_LUT = Nuse
+      lut%Ntheta_LUT = Ntheta
 
-      allocate(lut%table_LUT(1:lmax,0:Nuse-1))
+      allocate(lut%table_LUT(1:lmax,0:Ntheta-1))
 
-      dtheta = (PI - 0d0) / Real(Nuse, s2_dp)
+      dtheta = (PI - 0d0) / Real(Ntheta, s2_dp)
       do l=1, lmax
          theta = 0d0
-         do itheta=0, Nuse-1
+         do itheta=0, Ntheta-1
             ! Compute the data with plgndr.
             lut%table_LUT(l,itheta) = bianchi2_lut_plgndr(l,1,cos(theta))
             theta = theta + dtheta
@@ -82,16 +92,18 @@ module bianchi2_lut_mod
 
     end function bianchi2_lut_init
 
+
     !-------------------------------------------------------------------------
     ! bianchi2_lut_write
     !
     !> Writes a lut in a binary file.
     !!
     !!   \param[in] lut Initialized bianchi2_lut object
-    !!   \paramn[in] filename_LUT Binary file containing the LUT.
+    !!   \paramn[in] filename_LUT Name of binary file containing the LUT.
     !!
     !! \authors Thibaut Josset
     !-------------------------------------------------------------------------
+
     subroutine bianchi2_lut_write(lut,filename_LUT)
 
       type(bianchi2_lut), intent(in) :: lut
@@ -104,11 +116,11 @@ module bianchi2_lut_mod
 
       ! Write the sizes of the table.
       write(10) lut%lmax_LUT
-      write(10) lut%Nuse_LUT
+      write(10) lut%Ntheta_LUT
 
       ! Write the table
       do l=1, lut%lmax_LUT
-         do itheta=0, (lut%Nuse_LUT - 1)
+         do itheta=0, (lut%Ntheta_LUT - 1)
             write(10) lut%table_LUT(l,itheta)
          end do
       end do
@@ -124,15 +136,16 @@ module bianchi2_lut_mod
     !> Reads a lut from a file.
     !!
     !!   \param[in] lmax Maximum spherical harmonic l to consider.
-    !!   \param[in] Nuse Number of terms used to compute IA and IB.
-    !!   \param[in] filename_LUT Binary file containing the data.
+    !!   \param[in] Ntheta Number of terms used to compute IA and IB.
+    !!   \param[in] filename_LUT Name of binary file containing the LUT.
     !!   \retval lut bianchi2_lut object to get.
     !!
     !! \authors Thibaut Josset
     !-------------------------------------------------------------------------
-    function bianchi2_lut_read(lmax,Nuse,filename_LUT) result(lut)
+
+    function bianchi2_lut_read(lmax,Ntheta,filename_LUT) result(lut)
       
-      integer, intent(in) :: lmax,Nuse
+      integer, intent(in) :: lmax,Ntheta
       character(len=S2_STRING_LEN) :: filename_LUT
       type(bianchi2_lut) :: lut
 
@@ -142,20 +155,20 @@ module bianchi2_lut_mod
               status='old',action='read')
 
       read(10) lut%lmax_LUT
-      read(10) lut%Nuse_LUT
-      allocate(lut%table_LUT(1:lmax,0:Nuse-1))
+      read(10) lut%Ntheta_LUT
+      allocate(lut%table_LUT(1:lmax,0:Ntheta-1))
 
       if(lmax .ne. lut%lmax_LUT) then
          call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_L_INVALID, &
                  'bianchi2_plm1table_getval')
   
-      elseif(Nuse .ne. lut%Nuse_LUT) then
+      elseif(Ntheta .ne. lut%Ntheta_LUT) then
          call bianchi2_error(BIANCHI2_ERROR_PLM1TABLE_THETA_INVALID, &
               'bianchi2_plm1table_getval')
 
       else     
          do l=1, lmax      
-            do itheta=0, Nuse-1
+            do itheta=0, Ntheta-1
                read(10) lut%table_LUT(l,itheta)
             end do
          end do
@@ -178,6 +191,7 @@ module bianchi2_lut_mod
     !!
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------
+
     function bianchi2_lut_access(lut,l,itheta) result(plm1)
       
       type(bianchi2_lut), intent(in) :: lut
@@ -240,6 +254,8 @@ module bianchi2_lut_mod
          endif
       endif
       return
+
     end function bianchi2_lut_plgndr
+
 
 end module bianchi2_lut_mod
