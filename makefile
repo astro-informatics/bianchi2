@@ -36,14 +36,6 @@ ifeq ($(UNAME), Darwin)
 endif
 
 
-# ======== PPFLAGS ========
-
-ifeq ($(FC),nagfor)
-  PPFLAGS = -fpp $(OPT)
-else ifeq ($(FC),ifort)
-  PPFLAGS = -fpp $(OPT)
-endif
-
 
 # ======== LINKS ========
 
@@ -82,10 +74,11 @@ S2BIN        = $(S2DIR)/bin
 S2DOC        = $(S2DIR)/doc
 
 BIANCHI2DIR   = $(PROGDIR)/bianchi2
-BIANCHI2SRCPAR= $(BIANCHI2DIR)/src
-BIANCHI2SRC   = $(BIANCHI2DIR)/src/mod
+BIANCHI2SRC   = $(BIANCHI2DIR)/src
+BIANCHI2MOD   = $(BIANCHI2DIR)/src/mod
 BIANCHI2PROG  = $(BIANCHI2DIR)/src/prog
 BIANCHI2INC   = $(BIANCHI2DIR)/include
+BIANCHI2OBJ   = $(BIANCHI2INC)
 BIANCHI2BIN   = $(BIANCHI2DIR)/bin
 BIANCHI2LIB   = $(BIANCHI2DIR)/lib
 BIANCHI2DOC   = $(BIANCHI2DIR)/doc
@@ -140,9 +133,21 @@ X11LIB       = /usr/X11R6/lib
 X11LIBNM     = X11
 
 
+# ======== SOURCE LOCATIONS ========
+
+vpath %.f90 $(BIANCHI2MOD)
+vpath %.f90 $(BIANCHI2PROG)
+
+
 # ======== FFFLAGS ========
 
 FFLAGS  = -I$(HPIXINC) -I$(S2INC) -I$(BIANCHI2INC) -I.
+
+ifeq ($(FC),nagfor)
+  FFLAGS += -mdir $(BIANCHI2INC)
+else ifeq ($(FC),ifort)
+  FFLAGS += -module $(BIANCHI2INC)
+endif
 
 
 # ======== LDFLAGS ========
@@ -160,39 +165,58 @@ LDFLAGS =  -L$(BIANCHI2LIB) -l$(BIANCHI2LIBNM) \
            $(LDFLAGSPGPLOT)
 #           -L$(NAGLIB) -l$(NAGLIBNM) \
 
+
+# ======== PPFLAGS ========
+
+ifeq ($(FC),nagfor)
+  PPFLAGS = -fpp $(OPT)
+else ifeq ($(FC),ifort)
+  PPFLAGS = -fpp $(OPT)
+endif
+
+
 # ======== OBJECT FILES TO MAKE ========
 
-BIANCHI2OBJ = $(BIANCHI2INC)/bianchi2_sky_mod.o        \
-	      $(BIANCHI2INC)/bianchi2_lut_mod.o  \
-              $(BIANCHI2INC)/bianchi2_globaldata_mod.o \
-              $(BIANCHI2INC)/bianchi2_error_mod.o      
+BIANCHI2OBJS = $(BIANCHI2OBJ)/bianchi2_sky_mod.o        \
+	       $(BIANCHI2OBJ)/bianchi2_lut_mod.o        \
+               $(BIANCHI2OBJ)/bianchi2_globaldata_mod.o \
+               $(BIANCHI2OBJ)/bianchi2_error_mod.o      
+
+BIANCHI2BINS = $(BIANCHI2BIN)/bianchi2_about            \
+               $(BIANCHI2BIN)/bianchi2_sim              \
+               $(BIANCHI2BIN)/bianchi2_lut_gen
 
 
 # ======== MAKE RULES ========
 
+$(BIANCHI2OBJ)/%.o: %.f90
+	$(FC) -c $< -o $@ $(FFLAGS) $(PPFLAGS) 
+
+$(BIANCHI2BIN)/%: %.f90 $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a
+	$(FC) $< -o $@ $(FFLAGS) $(LDFLAGS) $(PPFLAGS)  
+
+
+# Default
+
+.PHONY: default
 default: all
 
+.PHONY: all
 all:     lib prog
-
-lib:	 $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a 
-
-prog:    $(BIANCHI2BIN)/bianchi2_sim          \
-	 $(BIANCHI2BIN)/bianchi2_lut_gen \
-         $(BIANCHI2BIN)/bianchi2_about
-
-
-$(BIANCHI2INC)/%.o: $(BIANCHI2SRC)/%.f90
-	$(FC) $(FFLAGS) $(PPFLAGS) -c $< -o $@ 
-	mv *.mod $(BIANCHI2INC)
-
-$(BIANCHI2INC)/%.o: $(BIANCHI2PROG)/%.f90
-	$(FC) $(FFLAGS) $(PPFLAGS) -c $< -o $@ 
 
 
 # Library
 
-$(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a: $(BIANCHI2OBJ)
-	ar -r $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a $(BIANCHI2OBJ)
+.PHONY: lib
+lib:	 $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a
+$(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a: $(BIANCHI2OBJS)
+	ar -r $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a $(BIANCHI2OBJS)
+
+
+# Programs
+
+.PHONY: prog
+prog: $(BIANCHI2BINS)
 
 
 # Tests
@@ -206,7 +230,7 @@ runtest: prog
 
 .PHONY: doc
 doc:
-	doxygen $(BIANCHI2SRCPAR)/doxygen.config
+	doxygen $(BIANCHI2SRC)/doxygen.config
 .PHONY: cleandoc
 cleandoc:
 	rm -f $(BIANCHI2DOC)/html/*
@@ -214,44 +238,29 @@ cleandoc:
 
 # Cleaning up
 
+.PHONY: clean
 clean:	tidy
 	rm -f $(BIANCHI2INC)/*.mod
 	rm -f $(BIANCHI2INC)/*.o
 	rm -f $(BIANCHI2LIB)/lib$(BIANCHI2LIBNM).a
 	rm -f $(BIANCHI2BIN)/*
 
+.PHONY: tidy
 tidy:	
 	rm -f *.mod
-	rm -f $(BIANCHI2SRC)/*~
+	rm -f $(BIANCHI2MOD)/*~
 	rm -f $(BIANCHI2PROG)/*~
 
 
 # Module dependencies
 
-$(BIANCHI2INC)/bianchi2_error_mod.o:     $(BIANCHI2SRC)/bianchi2_error_mod.f90
-$(BIANCHI2INC)/bianchi2_globaldata_mod.o: $(BIANCHI2SRC)/bianchi2_globaldata_mod.f90 \
-                                         $(BIANCHI2INC)/bianchi2_error_mod.o
-$(BIANCHI2INC)/bianchi2_lut_mod.o: $(BIANCHI2SRC)/bianchi2_lut_mod.f90 \
-                                         $(BIANCHI2INC)/bianchi2_error_mod.o
-$(BIANCHI2INC)/bianchi2_sky_mod.o:       $(BIANCHI2SRC)/bianchi2_sky_mod.f90 \
-                                         $(BIANCHI2INC)/bianchi2_lut_mod.o \
-                                         $(BIANCHI2INC)/bianchi2_globaldata_mod.o \
-                                         $(BIANCHI2INC)/bianchi2_error_mod.o 
+$(BIANCHI2OBJ)/bianchi2_error_mod.o:      $(BIANCHI2MOD)/bianchi2_error_mod.f90
+$(BIANCHI2OBJ)/bianchi2_globaldata_mod.o: $(BIANCHI2MOD)/bianchi2_globaldata_mod.f90 \
+                                          $(BIANCHI2OBJ)/bianchi2_error_mod.o
+$(BIANCHI2OBJ)/bianchi2_lut_mod.o:        $(BIANCHI2MOD)/bianchi2_lut_mod.f90        \
+                                          $(BIANCHI2OBJ)/bianchi2_error_mod.o
+$(BIANCHI2OBJ)/bianchi2_sky_mod.o:        $(BIANCHI2MOD)/bianchi2_sky_mod.f90        \
+                                          $(BIANCHI2OBJ)/bianchi2_lut_mod.o          \
+                                          $(BIANCHI2OBJ)/bianchi2_globaldata_mod.o   \
+                                          $(BIANCHI2OBJ)/bianchi2_error_mod.o 
 
-
-# Program dependencies and compilation
-
-$(BIANCHI2INC)/bianchi2_sim.o: $(BIANCHI2PROG)/bianchi2_sim.f90 lib
-$(BIANCHI2BIN)/bianchi2_sim:   $(BIANCHI2INC)/bianchi2_sim.o
-	$(FC) -o $(BIANCHI2BIN)/bianchi2_sim $(BIANCHI2INC)/bianchi2_sim.o \
-	$(LDFLAGS) $(PPFLAGS)
-
-$(BIANCHI2INC)/bianchi2_lut_gen.o: $(BIANCHI2PROG)/bianchi2_lut_gen.f90 lib
-$(BIANCHI2BIN)/bianchi2_lut_gen:   $(BIANCHI2INC)/bianchi2_lut_gen.o
-	$(FC) -o $(BIANCHI2BIN)/bianchi2_lut_gen $(BIANCHI2INC)/bianchi2_lut_gen.o \
-	$(LDFLAGS) $(PPFLAGS)
-
-$(BIANCHI2INC)/bianchi2_about.o: $(BIANCHI2PROG)/bianchi2_about.f90 lib
-$(BIANCHI2BIN)/bianchi2_about: 	 $(BIANCHI2INC)/bianchi2_about.o
-	$(FC) -o $(BIANCHI2BIN)/bianchi2_about $(BIANCHI2INC)/bianchi2_about.o \
-	$(LDFLAGS) $(PPFLAGS)
