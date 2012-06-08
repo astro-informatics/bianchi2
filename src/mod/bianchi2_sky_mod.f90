@@ -339,7 +339,8 @@ module bianchi2_sky_mod
     ! bianchi2_sky_init_alm
     !
     !> Initialise bianchi2 object by performing a bianchi2 simulation that
-    !! incorporates a cosmological constant.
+    !! incorporates a cosmological constant, where the simulation is computed
+    !! in harmonic space.
     !!
     !!  \param[in] omega_matter_in Input omega_matter parameter (see bianchi2 data
     !!    type for explanation).
@@ -351,24 +352,26 @@ module bianchi2_sky_mod
     !!  \param[in] rhand Logical to specify handedness of map.
     !!  \param[in] nside Nside of Healpix map to generate.
     !!  \param[in] lmax Maximum harmonic l to consider.
-    !!  \param[in] Nuse  Number of terms in use in the integrations IA and IB.
+    !!  \param[in] Ntheta  Number of terms in use in the integrations IA and IB.
     !!  \param[in] alpha Alpha Euler angle of the rotation.
     !!  \param[in] beta Beta Euler angle of the rotation.
     !!  \param[in] gamma Gamma Euler angle of the rotation.
+    !!  \param[in] lut Optional LUT containing precomputed associated Legendre 
+    !!    functions.
     !!  \retval b Initialised bianchi2 object with simulated map calculated.
     !!    
     !!  \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
     function bianchi2_sky_init_alm(omega_matter_in, omega_lambda_in, h, zE_in, wH, rhand, &
-         nside, lmax, Nuse, alpha, beta, gamma,lut) result(b)
+         nside, lmax, Ntheta, alpha, beta, gamma, lut) result(b)
 
       use bianchi2_globaldata_mod
       use s2_dl_mod, only : s2_dl_beta_operator
 
       real(s2_dp), intent(in) :: omega_matter_in, omega_lambda_in, h, zE_in, wH
       logical, intent(in) :: rhand
-      integer, intent(in) :: nside, lmax, Nuse
+      integer, intent(in) :: nside, lmax, Ntheta
       type(bianchi2_lut), intent(in), optional :: lut
       type(bianchi2_sky) :: b
   
@@ -403,7 +406,7 @@ module bianchi2_sky_mod
 
       ! Check object not already initialised.
       if(b%init) then
-        call bianchi2_error(BIANCHI2_ERROR_INIT, 'bianchi2_sky_init')
+        call bianchi2_error(BIANCHI2_ERROR_INIT, 'bianchi2_sky_init_alm')
         return
       end if
 
@@ -443,8 +446,8 @@ module bianchi2_sky_mod
       tstop_use=-tau_needed    
 
       ! Calculate A(theta) and B(theta) terms.
-      allocate(A_grid(0:Nuse-1), stat=fail)
-      allocate(B_grid(0:Nuse-1), stat=fail)
+      allocate(A_grid(0:Ntheta-1), stat=fail)
+      allocate(B_grid(0:Ntheta-1), stat=fail)
 
       if(fail /= 0) then
          call bianchi2_error(BIANCHI2_ERROR_MEM_ALLOC_FAIL, &
@@ -454,13 +457,13 @@ module bianchi2_sky_mod
       A_grid = 0d0
       B_grid = 0d0
       b2gd_theta_0 = -PI/2d0
-      theta_inc = (PI - 0d0) / real(Nuse, s2_dp)
+      theta_inc = (PI - 0d0) / real(Ntheta, s2_dp)
 
       !$OMP PARALLEL DEFAULT(none), COPYIN(b2gd_it, b2gd_nt, b2_gd_treal,b2gd_xreal,b2gd_theta_0,b2gd_xarr,b2gd_tarr) &
       !$OMP FIRSTPRIVATE(itheta,R_final,RH_final,cos_bit_final,sin_bit_final,final_dens,C_sin,C_cos) &
-      !$OMP SHARED(Nuse,A_grid,B_grid,tstop_use,theta_inc,Lambda,fact,U10_req,b,b2gd_RH_start,b2gd_deltat,b2gd_ze,b2gd_tstop,b2gd_alpha,b2gd_Omega_matter,b2gd_Omega_Lambda)
+      !$OMP SHARED(Ntheta,A_grid,B_grid,tstop_use,theta_inc,Lambda,fact,U10_req,b,b2gd_RH_start,b2gd_deltat,b2gd_ze,b2gd_tstop,b2gd_alpha,b2gd_Omega_matter,b2gd_Omega_Lambda)
       !$OMP DO SCHEDULE (static)
-      do itheta = 0, Nuse-1
+      do itheta = 0, Ntheta-1
 
          b2gd_theta_0=-PI/2d0+itheta*theta_inc
         
@@ -534,7 +537,7 @@ module bianchi2_sky_mod
 
       !$OMP PARALLEL DEFAULT(none) &
       !$OMP FIRSTPRIVATE(l,lsign,IA,IB) &
-      !$OMP SHARED(lmax,alm,Nuse,A_grid,B_grid,handedness_sign,lut)
+      !$OMP SHARED(lmax,alm,Ntheta,A_grid,B_grid,handedness_sign,lut)
       !$OMP DO SCHEDULE(static)
       do l=1, lmax
          
@@ -547,8 +550,8 @@ module bianchi2_sky_mod
 
          ! Compute integrals.
          ! Use precomputed A(theta) and B(theta).
-         IA = bianchi2_sky_comp_IX(l,lmax,Nuse,A_grid,lut)
-         IB = bianchi2_sky_comp_IX(l,lmax,Nuse,B_grid,lut)
+         IA = bianchi2_sky_comp_IX(l,lmax,Ntheta,A_grid,lut)
+         IB = bianchi2_sky_comp_IX(l,lmax,Ntheta,B_grid,lut)
 
          ! Compute alm for a given 1. Only m=1 is non-zero.
          alm(l,1) = -lsign * PI * cmplx(- handedness_sign * (IB - IA), (IA + IB))
@@ -668,6 +671,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_param_write(b)
 
       type(bianchi2_sky), intent(in) :: b
@@ -693,6 +697,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_compute_map(b, nside)
 
       type(bianchi2_sky), intent(inout) :: b
@@ -722,6 +727,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a> 
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_compute_alm(b, lmax, mmax)
 
       type(bianchi2_sky), intent(inout) :: b
@@ -797,6 +803,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
+
     function bianchi2_sky_get_sky(b) result(sky)
 
       type(bianchi2_sky), intent(in) :: b
@@ -827,6 +834,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_get_alm(b, alm)
 
       type(bianchi2_sky), intent(in) :: b
@@ -858,6 +866,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_apply_beam(b, fwhm, lmax)
 
       use s2_pl_mod
@@ -899,6 +908,7 @@ module bianchi2_sky_mod
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_write(b, filename, file_type, comment)
 
       type(bianchi2_sky), intent(inout) :: b
@@ -940,6 +950,7 @@ module bianchi2_sky_mod
     !!
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------
+
     subroutine bianchi2_sky_write_Cl (Cl, lmax, rescale_Cl, filename)
       
       integer, intent(in) :: lmax
@@ -975,14 +986,15 @@ module bianchi2_sky_mod
     !!  \param[in] gamma Gamma Euler angle of the rotation.
     !!  \param[in] lmax Maximum harmonic l to consider.
     !!  \param[in] nside Healpix nside to compute map at.
-    !!  \param[in] rotation_alm Logical to specify the space used for the rotation.
+    !!  \param[in] rotation_alm Logical to specify the space used for
+    !!  the rotation (if true perform rotation in harmonic space).
     !!
     !! \authors <a href="http://www.jasonmcewen.org">Jason McEwen</a>
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------
 
-    subroutine bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside,&
- rotation_alm)
+    subroutine bianchi2_sky_rotate(b, alpha, beta, gamma, lmax, nside, &
+         rotation_alm)
 
       use s2_dl_mod, only: s2_dl_beta_operator
 
@@ -1366,16 +1378,18 @@ module bianchi2_sky_mod
     !> Compute IA and IB integrals required in Bianchi2 simulation.
     !!
     !!   \param[in] l Harmonic l to compute IA_l or IB_l for.
-    !!   \param[in] Nuse Number of terms in use in the integration.
+    !!   \param[in] Ntheta Number of terms in use in the integration.
     !!   \param[in] X_grid Contains the values A_grid(itheta) or B_grid(itheta).
+    !!   \param[in] lut Optional LUT containing precomputed associated Legendre 
+    !!    functions.
     !!   \retval IX Value of the integral.
     !!
     !! \authors Thibaut Josset
     !--------------------------------------------------------------------------  
 
-    function bianchi2_sky_comp_IX(l,lmax,Nuse,X_grid,lut) result(IX)
+    function bianchi2_sky_comp_IX(l,lmax,Ntheta,X_grid,lut) result(IX)
 
-      integer, intent(in) :: l,lmax,Nuse
+      integer, intent(in) :: l,lmax,Ntheta
       real(s2_dp), intent(in) :: X_grid(0:) ! X = A or B.
       type(bianchi2_lut), intent(in), optional :: lut
       real(s2_dp) :: IX
@@ -1387,12 +1401,12 @@ module bianchi2_sky_mod
 
       IX = 0d0
       theta = 0d0
-      dtheta = (PI - 0d0) / Real(Nuse, s2_dp)
+      dtheta = (PI - 0d0) / Real(Ntheta, s2_dp)
       
       ! Compute the sum of all the terms.
       if (present(lut)) then
 
-         do itheta = 0, Nuse-1      
+         do itheta = 0, Ntheta-1      
             Plm1 = bianchi2_lut_access(lut,l,itheta) ! Take the value in the table.
             integrand = sin(theta) * X_grid(itheta) * Plm1
             IX = IX + integrand*dtheta
@@ -1401,7 +1415,7 @@ module bianchi2_sky_mod
 
       else
 
-         do itheta = 0, Nuse-1  
+         do itheta = 0, Ntheta-1  
             Plm1 = bianchi2_lut_plgndr(l, 1, cos(theta)) ! Re-compute the value.
             integrand = sin(theta) * X_grid(itheta) * Plm1
             IX = IX + integrand*dtheta

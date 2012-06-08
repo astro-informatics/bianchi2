@@ -68,7 +68,7 @@ program bianchi2_sim
   logical :: apply_beam = .false.
   real(s2_sp) :: fwhm = FWHM_DEFAULT
   logical :: harmonic_space
-  integer :: Nuse
+  integer :: Ntheta
   logical :: rotation_alm = .false. ! Choose true only for 
                                     ! simulation in real space but 
                                     ! rotation in harmonic space.
@@ -79,6 +79,8 @@ program bianchi2_sim
 
   ! Set default parameter values.
   filename_out = 'sky.fits'
+  filename_out_power_spectrum = 'cl.txt'
+  filename_LUT = 'lut.dat'
   omega_matter = OMEGA_MATTER_DEFAULT
   omega_lambda = OMEGA_LAMBDA_DEFAULT
 
@@ -90,7 +92,7 @@ program bianchi2_sim
   rhand = RHAND_DEFAULT
 
   harmonic_space = HARMONIC_SPACE_DEFAULT
-  Nuse = NUSE_DEFAULT
+  Ntheta = NUSE_DEFAULT
 
   write(*,'(a)') '***********************************************'
   write(*,'(a)') 'BIANCHI2 VII_h rotating universe CMB simulation'
@@ -302,10 +304,10 @@ program bianchi2_sim
        default=HARMONIC_SPACE_DEFAULT, descr=description)
 
 
-  ! Get Nuse.
+  ! Get Ntheta.
   description = concatnl("", &
-       "Enter the number of terms (Nuse) used for the integrations: ")
-  Nuse = parse_int(handle, 'Nuse', &
+       "Enter the number of terms (Ntheta) used for the integrations: ")
+  Ntheta = parse_int(handle, 'Ntheta', &
        default=NUSE_DEFAULT, descr=description)
  
 
@@ -377,15 +379,15 @@ program bianchi2_sim
      ! If using a Look-Up-Table.
      if (read_LUT==.true.) then
 
-        lut = bianchi2_lut_read(lmax,Nuse,filename_LUT)
+        lut = bianchi2_lut_read(lmax,Ntheta,filename_LUT)
         write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space, using a lut...'
         b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
-          nside, lmax, Nuse, alpha, beta, gamma,lut)
+          nside, lmax, Ntheta, alpha, beta, gamma,lut)
         deallocate(lut%table_LUT)
      else
         write(*,'(a)') 'Computing BIANCHI2 simulation in harmonic space, without using a lut...'
         b = bianchi2_sky_init_alm(omega_matter, omega_lambda, h, zE, wH, rhand, &
-          nside, lmax, Nuse, alpha, beta, gamma)
+          nside, lmax, Ntheta, alpha, beta, gamma)
      end if
 
      call bianchi2_sky_compute_map(b,nside)
