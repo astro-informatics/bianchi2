@@ -926,6 +926,9 @@ module bianchi2_sky_mod
          case(S2_SKY_FILE_TYPE_MAP)
             call s2_sky_write_map_file(b%sky, filename, comment)
 
+         case(S2_SKY_FILE_TYPE_ALM)
+            call s2_sky_write_alm_file(b%sky, filename, comment)
+
          case(S2_SKY_FILE_TYPE_SKY)
             call s2_sky_io_fits_write(filename, b%sky, comment)
 
