@@ -40,7 +40,7 @@ DOCUMENTATION
      See doc/index.html
 
 REQUIREMENTS
-     S2 (http://www.mrao.cam.ac.uk/~jdm57/)
+     S2 (http://www.jasonmcewen.org)
      HEALPix (http://healpix.jpl.nasa.gov/)
      CFITSIO (http://heasarc.gsfc.nasa.gov/docs/software/fitsio/)
      NAG numerical libraries (http://www.nag.co.uk)
