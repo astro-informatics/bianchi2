@@ -28,9 +28,13 @@ REFERENCE
      appear.  Nevertheless, we make our implementation of these
      solutions available in this package.  If you use the code to
      produce published works please reference the download site
-     http://www.jasonmcewen.org/ and our related paper on
-     Bayesian evidence for Bianchi VIIh models with dark energy in the
-     WMAP CMB data:
+     http://www.jasonmcewen.org/ and our related papers:
+     
+       J. D. McEwen and T. Josset and S. M. Feeney and H. V. Peiris
+       and A. N. Lasenby. Bayesian analysis of anisotropic
+       cosmologies: Bianchi VIIh and WMAP.
+       Mon. Not. Roy. Astron. Soc., 436(4):3680-3694, 2013.
+       
        M. Bridges, J. D. McEwen, A. N. Lasenby, and
        M. P. Hobson. Markov chain Monte Carlo analysis of Bianchi VIIh
        models. Mon. Not. Roy. Astron. Soc., 377(4):1473-1480, 2007
@@ -40,7 +44,7 @@ DOCUMENTATION
      See doc/index.html
 
 REQUIREMENTS
-     S2 (http://www.jasonmcewen.org)
+     S2 (http://www.jasonmcewen.org/codes.html)
      HEALPix (http://healpix.jpl.nasa.gov/)
      CFITSIO (http://heasarc.gsfc.nasa.gov/docs/software/fitsio/)
      NAG numerical libraries (http://www.nag.co.uk)
