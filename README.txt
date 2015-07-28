@@ -12,9 +12,6 @@ DESCRIPTION
      Anthony Lasenby (not yet published) which incorporate a dark
      energy component.
 
-VERSION
-     Release 2.0, XX XXX 2012
-
 AUTHORS
      J. D. McEwen (mcewen@mrao.cam.ac.uk)
      A. N. Lasenby (a.n.lasenby@mrao.cam.ac.uk)
@@ -52,14 +49,14 @@ INSTALLATION
      See doc/index.html
 
 DOWNLOAD
-     http://www.jasonmcewen.org/
+     http://www.jasonmcewen.org
 
 SUPPORT
-     Contact Jason McEwen (mcewen@mrao.cam.ac.uk)
+     Contact Jason McEwen
 
 NOTE
      The package is still under development
-     Please report problems/bugs by email to: mcewen@mrao.cam.ac.uk
+     Please report problems/bugs by email to Jason McEwen
 
 LICENSE 
      BIANCHI2 package to simulate Bianchi type VIIh induced
