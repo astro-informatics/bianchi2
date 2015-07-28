@@ -13,8 +13,8 @@ DESCRIPTION
      energy component.
 
 AUTHORS
-     J. D. McEwen (mcewen@mrao.cam.ac.uk)
-     A. N. Lasenby (a.n.lasenby@mrao.cam.ac.uk)
+     J. D. McEwen (http://www.jasonmcewen.org)
+     A. N. Lasenby 
      T. Josset
 
 ACKNOWLEDGEMENTS
